@@ -31,14 +31,13 @@ app.add_middleware(
 )
 
 # Setup Jinja2 templates
-frontend_path = Path(__file__).parent.parent.parent / "frontend"
-templates_path = frontend_path / "templates"
+templates_path = Path(__file__).parent / "templates"
 if templates_path.exists():
     templates = Jinja2Templates(directory=str(templates_path))
     app.templates = templates
 
 # Mount static files
-static_path = frontend_path / "static"
+static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 

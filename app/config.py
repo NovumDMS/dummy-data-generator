@@ -1,0 +1,29 @@
+"""Application Configuration"""
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables"""
+    
+    # Database
+    database_url: str = "postgresql://user:password@localhost:5432/dummy_data_db"
+    
+    # JWT
+    secret_key: str = "your-secret-key-change-this-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    
+    # App
+    app_name: str = "Dummy Data Generator"
+    debug: bool = True
+    
+    class Config:
+        env_file = "working.env"
+        case_sensitive = False
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance"""
+    return Settings()

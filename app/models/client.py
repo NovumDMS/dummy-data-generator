@@ -12,6 +12,18 @@ class Clients(Base):
     client_name = Column(String(255), nullable=False)
     client_db_url_hash = Column(String(255), nullable=False)
     generation_count = Column(Integer, default=0)
-    last_accessed_ip = Column(String(45), nullable=True)
-    last_accessed_by = Column(String(255), nullable=True)
-    last_accessed_at = Column(DateTime, nullable=True)
+    last_generated_ip = Column(String(45), nullable=True)
+    last_generated_by = Column(String(255), nullable=True)
+    last_generated_at = Column(DateTime, nullable=True)
+
+    def add_new_client(self, db, client_id: str, client_name: str, client_db_url_hash: str):
+        """Add a new client to the database"""
+        new_client = Clients(
+            client_id=client_id,
+            client_name=client_name,
+            client_db_url_hash=client_db_url_hash
+        )
+        db.add(new_client)
+        db.commit()
+        db.refresh(new_client)
+        return new_client

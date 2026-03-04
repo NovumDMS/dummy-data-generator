@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
+from app.models.auth import Users
 from app.schemas import UserCreate, UserResponse, LoginRequest, TokenResponse
 from app.security import hash_password, verify_password
 from app.security.jwt import create_access_token
@@ -14,8 +14,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user"""
     # Check if user already exists
-    existing_user = db.query(User).filter(
-        (User.username == user.username) | (User.email == user.email)
+    existing_user = db.query(Users).filter(
+        (Users.username == user.username) | (Users.email == user.email)
     ).first()
     
     if existing_user:
@@ -26,7 +26,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     
     # Create new user
     hashed_password = hash_password(user.password)
-    db_user = User(
+    db_user = Users(
         username=user.username,
         email=user.email,
         hashed_password=hashed_password
@@ -43,19 +43,19 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     """Login and get access token"""
     # Find user
-    user = db.query(User).filter(User.username == credentials.username).first()
+    user = db.query(Users).filter(Users.username == credentials.username).first()
     
     if not user or not verify_password(credentials.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
+        return {
+            "error": "Invalid username or password",
+            "status_code": status.HTTP_401_UNAUTHORIZED
+        }
     
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
-        )
+        return {
+            "error": "User account is inactive",
+            "status_code": status.HTTP_403_FORBIDDEN
+        }
     
     # Create access token
     access_token = create_access_token({"sub": user.username, "user_id": user.id})

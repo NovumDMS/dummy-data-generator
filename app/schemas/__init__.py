@@ -25,6 +25,11 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+class ClientCreate(BaseModel):
+    """Client creation schema"""
+    client_id: str
+    client_name: str
+    client_db_url: str
 
 class TokenResponse(BaseModel):
     """Token response schema"""

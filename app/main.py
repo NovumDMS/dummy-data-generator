@@ -74,7 +74,7 @@ app.include_router(data.router)
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"message": f"Welcome to {settings.app_name}"}
+    return {"message": f"Welcome to the Dummy Data Generator API! Version {app.version}"}
 
 
 @app.get("/health")

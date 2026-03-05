@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from app.database import Base, engine
-from routes import auth, data, client
+from app.routes import auth, data, client
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(

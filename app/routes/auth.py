@@ -1,7 +1,5 @@
 """Authentication Routes"""
-from urllib import request
-
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.helper.ip_helper import get_ip_from_request
@@ -14,7 +12,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, db: Session = Depends(get_db), request: request = None):
+def register(user: UserCreate, db: Session = Depends(get_db), request: Request = None):
     """Register a new user"""
     # Check if user already exists
     existing_user = db.query(Users).filter(
@@ -45,7 +43,7 @@ def register(user: UserCreate, db: Session = Depends(get_db), request: request =
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(response: Response, credentials: LoginRequest, db: Session = Depends(get_db), request: request = None):
+def login(response: Response, credentials: LoginRequest, db: Session = Depends(get_db), request: Request = None):
     """Login and get access token"""
     # Find user
     user = db.query(Users).filter(Users.username == credentials.username).first()

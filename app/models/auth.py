@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from time import timezone
+
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
 from app.database import get_db, Base, gen_uuid
@@ -20,6 +23,7 @@ class Users(Base):
     def add_new_user(self, db, username: str, password_hash: str, is_admin: bool = False, is_active: bool = True):
         """Add a new user to the database"""
         new_user = Users(
+            id=gen_uuid(),
             username=username,
             password_hash=password_hash,
             is_admin=is_admin,
@@ -30,4 +34,28 @@ class Users(Base):
         db.refresh(new_user)
         return new_user
 
-    
+    def track_user_login(
+            self, 
+            db, 
+            user_id: UUID, 
+            login_ip: str, 
+            successful: bool = True, 
+            max_login_attempts: int = 5, 
+            lockout_duration_minutes: int = 30):
+        """Track user login attempts and lock account if necessary"""
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            return None
+        
+        if successful:
+            user.login_attempts = 0
+            user.last_login_ip = login_ip
+            user.last_login_at = datetime.now(timezone.utc)
+        else:
+            user.login_attempts += 1
+            if user.login_attempts >= max_login_attempts:
+                user.lockout_time = datetime.now(timezone.utc) + timedelta(minutes=lockout_duration_minutes)
+        
+        db.commit()
+        db.refresh(user)
+        return user

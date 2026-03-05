@@ -45,12 +45,19 @@ def register(user: UserCreate, db: Session = Depends(get_db), request: request =
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(response: Response, credentials: LoginRequest, db: Session = Depends(get_db)):
+def login(response: Response, credentials: LoginRequest, db: Session = Depends(get_db), request: request = None):
     """Login and get access token"""
     # Find user
     user = db.query(Users).filter(Users.username == credentials.username).first()
     
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    if not user:
+        return {
+            "error": "Invalid username or password",
+            "status_code": status.HTTP_401_UNAUTHORIZED
+        }
+    
+    if not verify_password(credentials.password, user.hashed_password):
+        user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False)
         return {
             "error": "Invalid username or password",
             "status_code": status.HTTP_401_UNAUTHORIZED
@@ -64,6 +71,7 @@ def login(response: Response, credentials: LoginRequest, db: Session = Depends(g
     
     # Create access token
     access_token = create_access_token({"sub": user.username, "user_id": user.id})
+    user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=True)
 
     response.set_cookie(
         key="access_token",

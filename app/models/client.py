@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, UUID, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
 from app.database import get_db, Base, gen_uuid
 from app.helper.hash_helper import hash_db_url
@@ -18,6 +18,7 @@ class Clients(Base):
     last_generated_ip = Column(String(45), nullable=True)
     last_generated_by = Column(String(255), nullable=True)
     last_generated_at = Column(DateTime, nullable=True)
+    deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted
 
     def add_new_client(
             self, 
@@ -45,3 +46,22 @@ class Clients(Base):
             return new_client
         else:
             raise ValueError("Invalid database URL. Only development/test URLs are allowed.")
+
+    def log_client_generation(
+            self, 
+            db, 
+            client_id: str, 
+            generated_by: str, 
+            generated_ip: str):
+        """Log client generation activity"""
+        client = db.query(Clients).filter(Clients.client_id == client_id).first()
+        if not client:
+            return None
+        
+        client.generation_count += 1
+        client.last_generated_by = generated_by
+        client.last_generated_ip = generated_ip
+        client.last_generated_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(client)
+        return client

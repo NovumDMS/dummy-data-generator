@@ -1,5 +1,5 @@
 """Authentication Routes"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.auth import Users
@@ -40,7 +40,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+def login(response: Response, credentials: LoginRequest, db: Session = Depends(get_db)):
     """Login and get access token"""
     # Find user
     user = db.query(Users).filter(Users.username == credentials.username).first()
@@ -59,8 +59,18 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     
     # Create access token
     access_token = create_access_token({"sub": user.username, "user_id": user.id})
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,        # True in prod (HTTPS)
+        samesite="lax",     # usually "lax"; consider "none" if cross-site
+        max_age=30 * 60,
+        path="/",
+    )
     
-    return {"access_token": access_token}
+    return {"message": "Login successful"}
 
 
 @router.get("/me", response_model=UserResponse)

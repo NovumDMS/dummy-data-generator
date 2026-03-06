@@ -130,25 +130,36 @@ main {
 }
 
 /* Auth Container */
-.auth-container {
+.auth-page {
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    background-color: var(--bg-dark);
+}
+
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     min-height: 60vh;
+    gap: 1rem;
 }
 
 .auth-form {
-    background: white;
+    background: var(--bg-light);
     padding: 3rem;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
+    width: 400px;
     max-width: 400px;
 }
 
 .auth-form h2 {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     color: #2c3e50;
 }
 

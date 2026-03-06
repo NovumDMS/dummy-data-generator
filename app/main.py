@@ -82,7 +82,23 @@ async def root():
 def login_page(request: Request):
     """Render login page"""
     if hasattr(app, "templates"):
-        return app.templates.TemplateResponse("index.html", {"request": request})
+        return app.templates.TemplateResponse("login.html", {"request": request})
+    else:
+        return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
+
+@app.get("/dashboard")
+def dashboard_page(request: Request):
+    """Render dashboard page"""
+    if hasattr(app, "templates"):
+        return app.templates.TemplateResponse("dashboard.html", {"request": request})
+    else:
+        return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
+    
+@app.get("/clients")
+def clients_page(request: Request):
+    """Render clients page"""
+    if hasattr(app, "templates"):
+        return app.templates.TemplateResponse("clients.html", {"request": request})
     else:
         return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
 

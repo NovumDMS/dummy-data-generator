@@ -2,7 +2,7 @@
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -77,6 +77,14 @@ async def root():
     """Root endpoint"""
     return {"message": f"Welcome to the Dummy Data Generator API! Version {app.version}"}
 
+
+@app.get("/login")
+def login_page(request: Request):
+    """Render login page"""
+    if hasattr(app, "templates"):
+        return app.templates.TemplateResponse("index.html", {"request": request})
+    else:
+        return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
 
 @app.get("/health")
 async def health_check():

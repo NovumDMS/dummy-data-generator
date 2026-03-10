@@ -20,7 +20,9 @@ def _password_pepper():
 
 def hash_password(password: str) -> str:
     """Hash a password with pepper"""
-    peppered_password = password + _password_pepper()
+    pepper = _password_pepper()
+    peppered_password = password + pepper
+    print(f"Hashing password: {password} with pepper: {peppered_password}")
     return pwd_context.hash(peppered_password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

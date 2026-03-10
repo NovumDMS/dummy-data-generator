@@ -7,7 +7,6 @@ from typing import Optional
 class UserBase(BaseModel):
     """Base user schema"""
     username: str
-    email: EmailStr
 
 
 class UserCreate(UserBase):

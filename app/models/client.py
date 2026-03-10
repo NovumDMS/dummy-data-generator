@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
 from app.database import get_db, Base, gen_uuid
-from app.helper.hash_helper import hash_db_url
+from app.helper.hash_helper import hash_db_url, verify_db_url
 
 db = get_db()
 
@@ -29,7 +29,7 @@ class Clients(Base):
             last_generated_by: str = None, 
             last_generated_ip: str = None):
         """Add a new client to the database"""
-        if "play" in client_db_url or "dev" in client_db_url or "development" in client_db_url: # Check to ensure development/test database URL            
+        if client_db_url in ["play", "dev", "development"]: # Check to ensure development/test database URL            
             client_db_url_hash = hash_db_url(client_db_url)
 
             new_client = Clients(
@@ -46,6 +46,12 @@ class Clients(Base):
             return new_client
         else:
             raise ValueError("Invalid database URL. Only development/test URLs are allowed.")
+        
+    def check_client_db_url(self, client_name: str) -> bool:
+        """Check if the provided client database URL matches the stored hash"""
+        client = db.get(Clients).filter(Clients.client_name == client_name).first()
+        db_url = verify_db_url(client.client_db_url_hash)
+        return True
 
     def log_client_generation(
             self, 

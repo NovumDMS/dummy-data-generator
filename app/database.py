@@ -13,7 +13,7 @@ load_dotenv("working.env")
 # Create database engine
 engine = create_engine(
     os.getenv("DATABASE_URL"),
-    echo=os.getenv("DEBUG", "False").lower() in ("true", "1", "t"),
+    echo=False, #os.getenv("DEBUG", "False").lower() in ("true", "1", "t"),
     pool_pre_ping=True,  # Verify connections before using them
 )
 

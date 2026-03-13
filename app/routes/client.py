@@ -3,16 +3,22 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.client import Clients
 from app.schemas import ClientCreate
+from app.security.access import admin_required, login_required
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
+
 @router.get("/")
+@login_required
+@admin_required
 def get_clients(db: Session = Depends(get_db)):
     """Get all clients"""
     clients = db.query(Clients).all()
     return clients
 
 @router.post("/register")
+@login_required
+@admin_required
 def register_client(client: ClientCreate, db: Session = Depends(get_db)):
     """Register a new client"""
     try:

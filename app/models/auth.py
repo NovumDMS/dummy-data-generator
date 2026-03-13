@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from time import timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
@@ -20,7 +19,8 @@ class Users(Base):
     last_login_at = Column(DateTime, nullable=True)
     lockout_time = Column(DateTime, nullable=True)
 
-    def add_new_user(self, db, username: str, password_hash: str, is_admin: bool = False, is_active: bool = True):
+    @staticmethod
+    def add_new_user(db, username: str, password_hash: str, is_admin: bool = False, is_active: bool = True):
         """Add a new user to the database"""
         new_user = Users(
             id=gen_uuid(),
@@ -34,8 +34,8 @@ class Users(Base):
         db.refresh(new_user)
         return new_user
 
-    def track_user_login(
-            self, 
+    @staticmethod
+    def track_user_login( 
             db, 
             user_id: UUID, 
             login_ip: str, 

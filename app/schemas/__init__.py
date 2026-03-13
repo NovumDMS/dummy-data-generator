@@ -12,17 +12,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation schema"""
     password: str
-
-
-class UserResponse(UserBase):
-    """User response schema"""
-    id: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
     
-    class Config:
-        from_attributes = True
 
 class ClientCreate(BaseModel):
     """Client creation schema"""

@@ -7,9 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from app.database import Base, engine
 from app.routes import auth, data, client
+from app.templating import templates 
+
+from app.security.access import admin_required, login_required, _redirect_to_login
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -55,11 +59,10 @@ app.add_middleware(
     ],
 )
 
-# Setup Jinja2 templates
-templates_path = Path(__file__).parent / "templates"
-if templates_path.exists():
-    templates = Jinja2Templates(directory=str(templates_path))
-    app.templates = templates
+# Add session middleware
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY"), max_age=3600)
+
+app.templates = templates
 
 # Mount static files
 static_path = Path(__file__).parent / "static"
@@ -82,11 +85,24 @@ async def root():
 def login_page(request: Request):
     """Render login page"""
     if hasattr(app, "templates"):
-        return app.templates.TemplateResponse("login.html", {"request": request})
+        flash = request.session.pop("flash", None)
+        if flash:
+            msg = flash.get("message")
+            level = flash.get("level", "info")
+        return app.templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "msg": msg if flash else None,
+                "level": level if flash else None
+            }
+        )
     else:
         return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
 
 @app.get("/dashboard")
+@login_required
+@admin_required
 def dashboard_page(request: Request):
     """Render dashboard page"""
     if hasattr(app, "templates"):
@@ -95,6 +111,8 @@ def dashboard_page(request: Request):
         return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
     
 @app.get("/clients")
+@login_required
+@admin_required
 def clients_page(request: Request):
     """Render clients page"""
     if hasattr(app, "templates"):
@@ -103,6 +121,8 @@ def clients_page(request: Request):
         return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
 
 @app.get("/health")
+@login_required
+@admin_required
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}

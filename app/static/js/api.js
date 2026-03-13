@@ -4,14 +4,14 @@
  */
 
 const API = {
-    BASE_URL: 'http://localhost:8000/api',
-    
+    BASE_URL: '/api',
     /**
      * Register a new user
      */
     async register(username, email, password) {
         const response = await fetch(`${this.BASE_URL}/auth/register`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -36,6 +36,7 @@ const API = {
     async login(username, password) {
         const response = await fetch(`${this.BASE_URL}/auth/login`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -45,29 +46,22 @@ const API = {
             })
         });
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Login failed');
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
         }
-        
-        return await response.json();
+
+        window.location.href = '/dashboard';
     },
     
     /**
      * Get current user info
      */
     async getCurrentUser() {
-        const token = localStorage.getItem('access_token');
-        
-        if (!token) {
-            throw new Error('Not authenticated');
-        }
-        
         const response = await fetch(`${this.BASE_URL}/auth/me`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            }
+            credentials: 'include'
         });
         
         if (!response.ok) {
@@ -81,7 +75,7 @@ const API = {
      * Log out user
      */
     logout() {
-        localStorage.removeItem('access_token');
+        window.location.href = '/api/auth/logout';
     },
     
     /**

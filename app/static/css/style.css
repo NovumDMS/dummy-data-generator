@@ -220,6 +220,51 @@ main {
     color: green;
 }
 
+.login-toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    min-width: 280px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 0.9rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.login-toast-info {
+    background: #eef6ff;
+    color: #264f7a;
+    border-color: #8eb6df;
+}
+
+.login-toast-warning {
+    background: #fff7e8;
+    color: #7a4a1d;
+    border-color: #e0b06a;
+}
+
+.login-toast-error {
+    background: #fff0f0;
+    color: #7d2f2f;
+    border-color: #d08c8c;
+}
+
+.login-toast-success {
+    background: #edf8ee;
+    color: #1f6a36;
+    border-color: #85bf95;
+}
+
+.login-toast.hide {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
 /* Buttons */
 .btn {
     display: inline-block;

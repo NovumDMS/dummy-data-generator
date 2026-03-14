@@ -34,8 +34,6 @@ def login_required(func):
         
         # Validate the token
         payload = decode_access_token(token)
-        print(f"Decoded JWT payload: {payload}")  # Debugging statement
-        print(f"Current Time: {datetime.now(timezone.utc)}")  # Debugging statement
         
         if not payload:
             return _redirect_to_login(request, "Session expired. Please log in again", "warning")

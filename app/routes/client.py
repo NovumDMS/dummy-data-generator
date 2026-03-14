@@ -33,3 +33,34 @@ def register_client(client: ClientCreate, db: Session = Depends(get_db)):
         "client_id": client.client_id,
         "status_code": status.HTTP_201_CREATED
     }
+
+@router.delete("/{client_id}")
+@login_required
+@admin_required
+def delete_client(client_id: str, db: Session = Depends(get_db)):
+    """Delete a client by ID"""
+    client = db.query(Clients).filter(Clients.client_id == client_id).first()
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+    db.delete(client)
+    db.commit()
+    return {
+        "message": "Client deleted successfully",
+        "client_id": client_id
+    }
+
+@router.get("/client-info/{client_id}")
+@login_required
+@admin_required
+def get_client_info(client_id: str, db: Session = Depends(get_db)):
+    """Get information about a specific client by ID"""
+    client = db.query(Clients).filter(Clients.client_id == client_id).first()
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+    return client

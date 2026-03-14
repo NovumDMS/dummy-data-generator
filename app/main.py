@@ -2,7 +2,7 @@
 import logging
 import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -103,7 +103,7 @@ def login_page(request: Request):
 @app.get("/dashboard")
 @login_required
 @admin_required
-def dashboard_page(request: Request):
+def dashboard_page(request: Request, response: Response):
     """Render dashboard page"""
     if hasattr(app, "templates"):
         return app.templates.TemplateResponse("dashboard.html", {"request": request})
@@ -113,7 +113,7 @@ def dashboard_page(request: Request):
 @app.get("/clients")
 @login_required
 @admin_required
-def clients_page(request: Request):
+def clients_page(request: Request, response: Response):
     """Render clients page"""
     if hasattr(app, "templates"):
         return app.templates.TemplateResponse("clients.html", {"request": request})
@@ -123,7 +123,7 @@ def clients_page(request: Request):
 @app.get("/health")
 @login_required
 @admin_required
-async def health_check():
+async def health_check(request: Request, response: Response):
     """Health check endpoint"""
     return {"status": "healthy"}
 

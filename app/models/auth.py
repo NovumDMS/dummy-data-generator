@@ -9,7 +9,7 @@ db = get_db()
 class Users(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid(), unique=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
     username = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
@@ -35,13 +35,7 @@ class Users(Base):
         return new_user
 
     @staticmethod
-    def track_user_login( 
-            db, 
-            user_id: UUID, 
-            login_ip: str, 
-            successful: bool = True, 
-            max_login_attempts: int = 5, 
-            lockout_duration_minutes: int = 30):
+    def track_user_login(db, user_id: UUID, login_ip: str, successful: bool = True, max_login_attempts: int = 5, lockout_duration_minutes: int = 30):
         """Track user login attempts and lock account if necessary"""
         user = db.query(Users).filter(Users.id == user_id).first()
         if not user:

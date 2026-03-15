@@ -10,7 +10,7 @@ db = get_db()
 class Clients(Base):
     __tablename__ = "clients"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid(), unique=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
     client_id = Column(String(3), unique=True, index=True, nullable=False)
     client_name = Column(String(255), nullable=False)
     client_db_url_hash = Column(String(255), nullable=False)
@@ -20,19 +20,15 @@ class Clients(Base):
     last_generated_at = Column(DateTime, nullable=True)
     deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted
 
-    def add_new_client(
-            self, 
-            db, 
-            client_id: str, 
-            client_name: str, 
-            client_db_url: str, 
-            last_generated_by: str = None, 
-            last_generated_ip: str = None):
+    @staticmethod
+    def add_new_client(db, client_id: str, client_name: str, client_db_url: str, last_generated_by: str = None, last_generated_ip: str = None):
         """Add a new client to the database"""
-        if client_db_url in ["play", "dev", "development"]: # Check to ensure development/test database URL            
+        allowed_keywords = ("play", "dev", "development")
+        if any(keyword in client_db_url.lower() for keyword in allowed_keywords):  # Allow only development/test database URLs
             client_db_url_hash = hash_db_url(client_db_url)
 
             new_client = Clients(
+                id=gen_uuid(),
                 client_id=client_id,
                 client_name=client_name,
                 client_db_url_hash=client_db_url_hash,
@@ -47,11 +43,14 @@ class Clients(Base):
         else:
             raise ValueError("Invalid database URL. Only development/test URLs are allowed.")
         
-    def check_client_db_url(self, client_name: str) -> bool:
+    @staticmethod
+    def check_client_db_url(db, client_id: str) -> bool:
         """Check if the provided client database URL matches the stored hash"""
-        client = db.get(Clients).filter(Clients.client_name == client_name).first()
-        db_url = verify_db_url(client.client_db_url_hash)
-        return True
+        client = db.query(Clients).filter(Clients.client_id == client_id).first()
+        if not client:
+            return False
+        
+        return verify_db_url(client.client_db_url_hash)
 
     def log_client_generation(
             self, 

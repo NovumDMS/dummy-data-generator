@@ -9,7 +9,7 @@ db = get_db()
 class GenerationLogs(Base):
     __tablename__ = "generation_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid(), unique=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
     client_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=False)
     generated_file_type = Column(String(30), nullable=False)
@@ -21,9 +21,11 @@ class GenerationLogs(Base):
     successful_generated_ids = Column(JSON, nullable=True)  # List of generated successful file IDs
     generation_date = Column(DateTime, server_default=datetime.now(timezone.utc))
 
-    def log_generation(self, db, client_id: str, user_id: str, generated_file_type: str, success_flag: bool):
+    @staticmethod
+    def log_generation(db, client_id: str, user_id: str, generated_file_type: str, success_flag: bool):
         """Log a new generation event to the database"""
         new_log = GenerationLogs(
+            id=gen_uuid(),
             client_id=client_id,
             user_id=user_id,
             generated_file_type=generated_file_type,
@@ -34,7 +36,8 @@ class GenerationLogs(Base):
         db.refresh(new_log)
         return new_log
     
-    def update_generation_log(self, db, log_id: str, total_records_generated: int, successful_count: int, failed_count: int, validated_records_count: int, successful_generated_ids: list):
+    @staticmethod
+    def update_generation_log(db, log_id: str, total_records_generated: int, successful_count: int, failed_count: int, validated_records_count: int, successful_generated_ids: list):
         """Update an existing generation log with results"""
         log_entry = db.query(GenerationLogs).filter(GenerationLogs.id == log_id).first()
         if log_entry:
@@ -62,6 +65,7 @@ class AuthenticationLogs(Base):
     def track_user_logging(db, user_id: str, login_ip: str, successful: bool, event_notes: str = None):
         """Track a user login attempt"""
         new_log = AuthenticationLogs(
+            id=gen_uuid(),
             user_id=user_id,
             login_ip=login_ip,
             successful=successful,
@@ -76,6 +80,7 @@ class AuthenticationLogs(Base):
     def track_register_user(db, user_id: str, login_ip: str, successful: bool, event_notes: str = None):
         """Track a user registration attempt"""
         new_log = AuthenticationLogs(
+            id=gen_uuid(),
             user_id=user_id,
             login_ip=login_ip,
             successful=successful,

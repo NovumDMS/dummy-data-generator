@@ -128,11 +128,11 @@ def refresh_login_token(request: Request, response: Response):
     return {"message": "Access token refreshed", "refreshed": True}
 
 @router.api_route("/logout", methods=["GET", "POST"])
-def logout(request: Request):
+def logout(request: Request, db: Session = Depends(get_db)):
     """Logout user by clearing the access token cookie"""
     redirect_response = _redirect_to_login(request, "Logged out successfully", "success")
     redirect_response.delete_cookie(key="access_token", path="/")
     redirect_response.delete_cookie(key="refresh_token", path="/")
-    AuthenticationLogs.track_user_logging(db=get_db(), user_id=str(request.state.user.id), login_ip=get_ip_from_request(request), successful=True, event_notes="User logged out")
+    AuthenticationLogs.track_user_logging(db=db, user_id=str(request.state.user.id), login_ip=get_ip_from_request(request), successful=True, event_notes="User logged out")
 
     return redirect_response

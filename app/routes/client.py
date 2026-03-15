@@ -22,9 +22,9 @@ def get_clients(request: Request, response: Response, db: Session = Depends(get_
 def register_client(client: ClientCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Register a new client"""
     try:
-        Clients.add_new_client(db, client.client_id, client.client_name, client.client_db_url_hash)
+        Clients.add_new_client(db, client.client_id, client.client_name, client.client_db_url)
     except ValueError as e:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )

@@ -1,4 +1,5 @@
 """Authentication Routes"""
+from datetime import datetime, timezone
 import os
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -89,6 +90,13 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
             "status_code": status.HTTP_403_FORBIDDEN
         }
     
+    if user.lockout_time and user.lockout_time > datetime.now(timezone.utc):
+        AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="User account is locked out")
+        return {
+            "error": f"Account locked until {datetime.date(user.lockout_time).isoformat()}",
+            "status_code": status.HTTP_403_FORBIDDEN
+        }
+    
     # Create access token
     token_payload = {"sub": user.username, "user_id": str(user.id), "is_admin": user.is_admin}
     access_token = create_access_token(token_payload)
@@ -128,12 +136,12 @@ def refresh_login_token(request: Request, response: Response):
 
 
 @router.api_route("/logout", methods=["GET", "POST"])
-@login_required
 def logout(request: Request, db: Session = Depends(get_db)):
     """Logout user by clearing the access token cookie"""
+    if request.state.user_id:
+        AuthenticationLogs.track_user_logging(db=db, user_id=str(request.state.user_id), login_ip=get_ip_from_request(request), successful=True, event_notes="User logged out")
     redirect_response = _redirect_to_login(request, "Logged out successfully", "success")
     redirect_response.delete_cookie(key="access_token", path="/")
     redirect_response.delete_cookie(key="refresh_token", path="/")
-    AuthenticationLogs.track_user_logging(db=db, user_id=str(request.state.user.id), login_ip=get_ip_from_request(request), successful=True, event_notes="User logged out")
 
     return redirect_response

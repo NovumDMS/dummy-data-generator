@@ -3,6 +3,9 @@ def get_ip_from_request(request) -> str:
     if request:
         forwarded = request.headers.get("x-forwarded-for")
 
+        if not request.client:
+            return None
+
         if forwarded:
             client_ip = forwarded.split(",")[0]
         else:

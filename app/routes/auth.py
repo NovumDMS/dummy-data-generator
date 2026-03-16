@@ -26,6 +26,14 @@ def _access_cookie_max_age() -> int:
 def _refresh_cookie_max_age() -> int:
     return int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7)) * 24 * 60 * 60
 
+def _to_utc_aware(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        # Treat stored naive values as UTC
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 
 def _set_token_cookie(response: Response, key: str, value: str, max_age: int) -> None:
     response.set_cookie(
@@ -90,10 +98,12 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
             "status_code": status.HTTP_403_FORBIDDEN
         }
     
-    if user.lockout_time and user.lockout_time > datetime.now(timezone.utc):
+    lockout_utc = _to_utc_aware(user.lockout_time)
+    
+    if lockout_utc and lockout_utc > datetime.now(timezone.utc):
         AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="User account is locked out")
         return {
-            "error": f"Account locked until {datetime.date(user.lockout_time).isoformat()}",
+            "error": f"Account locked until {lockout_utc.isoformat()}",
             "status_code": status.HTTP_403_FORBIDDEN
         }
     

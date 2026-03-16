@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation schema"""
     password: str
+    is_admin: bool = False
     
 
 class ClientCreate(BaseModel):

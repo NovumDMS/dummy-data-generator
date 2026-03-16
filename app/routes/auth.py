@@ -57,7 +57,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     
     # Create new user
     hashed_password = hash_password(user.password)
-    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=True)
+    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin)
     AuthenticationLogs.track_register_user(db, user_id=str(db_user.id), login_ip=get_ip_from_request(request), successful=True, event_notes="User registered successfully")
     return db_user
 
@@ -69,7 +69,6 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     user = db.query(Users).filter(Users.username == credentials.username).first()
     
     if not user:
-        AuthenticationLogs.track_user_logging(db, user_id="unknown", login_ip=get_ip_from_request(request), successful=False, event_notes="Invalid username")
         return {
             "error": "Invalid username or password",
             "status_code": status.HTTP_401_UNAUTHORIZED
@@ -127,7 +126,9 @@ def refresh_login_token(request: Request, response: Response):
     _set_token_cookie(response, "access_token", refreshed_access_token, _access_cookie_max_age())
     return {"message": "Access token refreshed", "refreshed": True}
 
+
 @router.api_route("/logout", methods=["GET", "POST"])
+@login_required
 def logout(request: Request, db: Session = Depends(get_db)):
     """Logout user by clearing the access token cookie"""
     redirect_response = _redirect_to_login(request, "Logged out successfully", "success")

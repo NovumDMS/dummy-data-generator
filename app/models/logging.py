@@ -19,7 +19,7 @@ class GenerationLogs(Base):
     failed_count = Column(Integer, default=0)
     validated_records_count = Column(Integer, default=0)
     successful_generated_ids = Column(JSON, nullable=True)  # List of generated successful file IDs
-    generation_date = Column(DateTime, server_default=datetime.now(timezone.utc))
+    generation_date = Column(DateTime, server_default=datetime.now(timezone.utc).isoformat())
 
     @staticmethod
     def log_generation(db, client_id: str, user_id: str, generated_file_type: str, success_flag: bool):
@@ -57,7 +57,7 @@ class AuthenticationLogs(Base):
     user_id = Column(UUID(as_uuid=True), nullable=False)
     login_ip = Column(String(45), nullable=False)  # Supports IPv6
     successful = Column(Boolean, default=False)
-    timestamp = Column(DateTime, server_default=datetime.now(timezone.utc))
+    timestamp = Column(DateTime, server_default=datetime.now(timezone.utc).isoformat())
     event_type = Column(String(50), nullable=False, default="login_attempt")  # e.g., login_attempt, logout
     event_notes = Column(String(255), nullable=True)  # Optional field for additional info
 

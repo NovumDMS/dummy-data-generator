@@ -1,11 +1,20 @@
 from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
 
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
 from app.database import get_db, Base, gen_uuid
 from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
 
+load_dotenv('working.env')
+
 db = get_db()
+
+def check_client_db_whitelist(client_db_url: str) -> bool:
+    """Check if the client's database URL is in the whitelist"""
+    whitelist = [url.strip() for url in os.getenv("CLIENT_DB_LIST", "").split(",") if url.strip()]
+    return client_db_url in whitelist
 
 class Clients(Base):
     __tablename__ = "clients"
@@ -25,7 +34,7 @@ class Clients(Base):
     def add_new_client(db, client_id: str, client_name: str, client_db_url: str, last_generated_by: str = None, last_generated_ip: str = None, email: str = None):
         """Add a new client to the database"""
         allowed_keywords = ("play", "dev", "development")
-        if any(keyword in client_db_url.lower() for keyword in allowed_keywords):  # Allow only development/test database URLs
+        if any(keyword in client_db_url.lower() for keyword in allowed_keywords) and check_client_db_whitelist(client_db_url):  # Allow only development/test database URLs
             client_db_url_hash = encrypt_db_url(client_db_url)
 
             new_client = Clients(

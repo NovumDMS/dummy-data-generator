@@ -18,16 +18,18 @@ class Users(Base):
     last_login_ip = Column(String(45), nullable=True)
     last_login_at = Column(DateTime, nullable=True)
     lockout_time = Column(DateTime, nullable=True)
+    email = Column(String(255), nullable=True)  # Optional email field for password reset or notifications
 
     @staticmethod
-    def add_new_user(db, username: str, password_hash: str, is_admin: bool = False, is_active: bool = True):
+    def add_new_user(db, username: str, password_hash: str, is_admin: bool = False, is_active: bool = True, email: str = None):
         """Add a new user to the database"""
         new_user = Users(
             id=gen_uuid(),
             username=username,
             password_hash=password_hash,
             is_admin=is_admin,
-            is_active=is_active
+            is_active=is_active,
+            email=email
         )
         db.add(new_user)
         db.commit()

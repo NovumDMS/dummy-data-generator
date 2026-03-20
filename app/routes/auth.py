@@ -1,12 +1,13 @@
 """Authentication Routes"""
 from datetime import datetime, timezone
 import os
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.helper.ip_helper import get_ip_from_request
 from app.models.auth import Users
-from app.models.logging import AuthenticationLogs
 from app.schemas import UserCreate, LoginRequest, TokenResponse
 from app.helper.hash_helper import hash_password, verify_password
 from app.security.jwt import create_access_token, create_refresh_token, refresh_access_token, should_refresh_access_token
@@ -14,6 +15,7 @@ from app.security.access import admin_required, login_required, _redirect_to_log
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+logger = logging.getLogger(__name__)
 
 def _is_secure_cookie() -> bool:
     return os.getenv("ENVIRONMENT", "DEV").upper() == "PROD"
@@ -58,7 +60,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     ).first()
     
     if existing_user:
-        AuthenticationLogs.track_register_user(db, user_id=str(existing_user.id), login_ip=get_ip_from_request(request), successful=False, event_notes="Username already registered")
+        logger.warning(f"Attempt to register with already taken username: {user.username}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"  
@@ -67,7 +69,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     # Create new user
     hashed_password = hash_password(user.password)
     db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin)
-    AuthenticationLogs.track_register_user(db, user_id=str(db_user.id), login_ip=get_ip_from_request(request), successful=True, event_notes="User registered successfully")
+    logger.info(f"New user registered: {user.username} (Admin: {user.is_admin})")
     return db_user
 
 
@@ -85,14 +87,14 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     
     if not verify_password(credentials.password, user.password_hash):
         user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False)
-        AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="Invalid password")
+        logger.warning(f"Invalid password attempt for user: {user.username} (ID: {user.id})")
         return {
             "error": "Invalid username or password",
             "status_code": status.HTTP_401_UNAUTHORIZED
         }
     
     if not user.is_active:
-        AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="User account is inactive")
+        logger.warning(f"Inactive user login attempt: {user.username} (ID: {user.id})")
         return {
             "error": "User account is inactive",
             "status_code": status.HTTP_403_FORBIDDEN
@@ -101,7 +103,7 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     lockout_utc = _to_utc_aware(user.lockout_time)
     
     if lockout_utc and lockout_utc > datetime.now(timezone.utc):
-        AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="User account is locked out")
+        logger.warning(f"Locked out user login attempt: {user.username} (ID: {user.id})")
         return {
             "error": f"Account locked until {lockout_utc.isoformat()}",
             "status_code": status.HTTP_403_FORBIDDEN
@@ -112,7 +114,7 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     access_token = create_access_token(token_payload)
     refresh_token = create_refresh_token(token_payload)
     user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=True)
-    AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=True, event_notes="User logged in successfully")
+    logger.info(f"User logged in successfully: {user.username} (ID: {user.id})")
 
     _set_token_cookie(response, "access_token", access_token, _access_cookie_max_age())
     _set_token_cookie(response, "refresh_token", refresh_token, _refresh_cookie_max_age())
@@ -141,15 +143,17 @@ def refresh_login_token(request: Request, response: Response):
             detail="Unable to refresh access token",
         )
 
+    logger.info("Access token refreshed successfully")
     _set_token_cookie(response, "access_token", refreshed_access_token, _access_cookie_max_age())
     return {"message": "Access token refreshed", "refreshed": True}
 
 
 @router.api_route("/logout", methods=["GET", "POST"])
-def logout(request: Request, db: Session = Depends(get_db)):
+def logout(request: Request):
     """Logout user by clearing the access token cookie"""
     redirect_response = _redirect_to_login(request, "Logged out successfully", "success")
     redirect_response.delete_cookie(key="access_token", path="/")
     redirect_response.delete_cookie(key="refresh_token", path="/")
+    logger.info("User logged out successfully")
 
     return redirect_response

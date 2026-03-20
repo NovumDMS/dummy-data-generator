@@ -52,7 +52,7 @@ def delete_client(client_id: str, request: Request, response: Response, db: Sess
         "client_id": client_id
     }
 
-@router.get("/client-info/{client_id}")
+@router.get("/info/{client_id}")
 @login_required
 @admin_required
 def get_client_info(client_id: str, request: Request, response: Response, db: Session = Depends(get_db)):

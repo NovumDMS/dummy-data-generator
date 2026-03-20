@@ -13,7 +13,7 @@ from app.database import Base, engine
 from app.routes import auth, data, client
 from app.templating import templates 
 
-from app.security.access import admin_required, login_required, _redirect_to_login
+from app.security.access import login_required, _redirect_to_login
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -102,7 +102,6 @@ def login_page(request: Request):
 
 @app.get("/dashboard")
 @login_required
-@admin_required
 def dashboard_page(request: Request, response: Response):
     """Render dashboard page"""
     if hasattr(app, "templates"):
@@ -112,7 +111,6 @@ def dashboard_page(request: Request, response: Response):
     
 @app.get("/clients")
 @login_required
-@admin_required
 def clients_page(request: Request, response: Response):
     """Render clients page"""
     if hasattr(app, "templates"):
@@ -122,7 +120,6 @@ def clients_page(request: Request, response: Response):
 
 @app.get("/health")
 @login_required
-@admin_required
 async def health_check(request: Request, response: Response):
     """Health check endpoint"""
     return {"status": "healthy"}

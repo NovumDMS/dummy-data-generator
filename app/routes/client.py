@@ -3,14 +3,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.client import Clients
 from app.schemas import ClientCreate
-from app.security.access import admin_required, login_required
+from app.security.access import login_required
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
 
 @router.get("/")
 @login_required
-@admin_required
 def get_clients(request: Request, response: Response, db: Session = Depends(get_db)):
     """Get all clients"""
     clients = db.query(Clients).all()
@@ -18,7 +17,6 @@ def get_clients(request: Request, response: Response, db: Session = Depends(get_
 
 @router.post("/register")
 @login_required
-@admin_required
 def register_client(client: ClientCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Register a new client"""
     try:
@@ -36,7 +34,6 @@ def register_client(client: ClientCreate, request: Request, response: Response, 
 
 @router.delete("/{client_id}")
 @login_required
-@admin_required
 def delete_client(client_id: str, request: Request, response: Response, db: Session = Depends(get_db)):
     """Delete a client by ID"""
     client = db.query(Clients).filter(Clients.client_id == client_id).first()
@@ -54,7 +51,6 @@ def delete_client(client_id: str, request: Request, response: Response, db: Sess
 
 @router.get("/client-info/{client_id}")
 @login_required
-@admin_required
 def get_client_info(client_id: str, request: Request, response: Response, db: Session = Depends(get_db)):
     """Get information about a specific client by ID"""
     client = db.query(Clients).filter(Clients.client_id == client_id).first()

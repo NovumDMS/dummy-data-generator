@@ -21,6 +21,7 @@ class ClientCreate(BaseModel):
     client_name: str
     client_db_url: str
 
+
 class TokenResponse(BaseModel):
     """Token response schema"""
     access_token: str

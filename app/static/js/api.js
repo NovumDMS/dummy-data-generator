@@ -48,10 +48,11 @@ const API = {
         
         const data = await response.json();
 
-        if (data.error) {
-            throw new Error(data.error);
+        if (!response.ok) {
+            const error = data.content?.error || 'Login failed';
+            throw new Error(error);
         }
-
+        
         window.location.href = '/dashboard';
     },
     
@@ -65,6 +66,7 @@ const API = {
         });
         
         if (!response.ok) {
+            console.log(response);
             throw new Error('Failed to get user info');
         }
         

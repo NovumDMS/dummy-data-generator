@@ -36,6 +36,7 @@
             await API.login(username, password);
         } catch (error) {
             document.getElementById('loginMessage').textContent = error.message;
+            document.getElementById('password').value = '';
         }
     });
 

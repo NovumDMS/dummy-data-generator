@@ -21,13 +21,14 @@ const API = {
                 password
             })
         });
+
+        const data = await response.json();
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Registration failed');
+            throw new Error(data.detail || 'Registration failed');
         }
         
-        return await response.json();
+        return data.detail || 'Registration successful';
     },
     
     /**

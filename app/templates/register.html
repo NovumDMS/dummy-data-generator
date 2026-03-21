@@ -21,7 +21,6 @@
             </div>
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
-        <p>Already have an account? <a href="/login">Login here</a></p>
         <div id="registerMessage"></div>
     </div>
 </div>
@@ -34,9 +33,8 @@
         const password = document.getElementById('password').value;
         
         try {
-            await API.register(username, email, password);
-            document.getElementById('registerMessage').textContent = 'Registration successful! Redirecting to login...';
-            setTimeout(() => window.location.href = '/login', 2000);
+            let data = await API.register(username, email, password);
+            document.getElementById('registerMessage').textContent = data;
         } catch (error) {
             document.getElementById('registerMessage').textContent = 'Registration failed: ' + error.message;
         }

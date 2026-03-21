@@ -68,7 +68,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     hashed_password = hash_password(user.password)
     db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin)
     logger.info(f"User registered successfully: {user.username} from IP: {get_ip_from_request(request)}")
-    return db_user
+    return {"message": f"User {user.username} registered successfully"}
 
 
 @router.post("/login")

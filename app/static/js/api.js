@@ -8,7 +8,7 @@ const API = {
     /**
      * Register a new user
      */
-    async register(username, email, password) {
+    async registerUser(username, email, password) {
         const response = await fetch(`${this.BASE_URL}/auth/register`, {
             method: 'POST',
             credentials: 'include',
@@ -28,7 +28,7 @@ const API = {
             throw new Error(data.detail || 'Registration failed');
         }
         
-        return data.detail || 'Registration successful';
+        return data.message || 'Registration successful';
     },
     
     /**
@@ -94,5 +94,49 @@ const API = {
         }
         
         return headers;
+    },
+
+    /**
+     * 
+     */
+    async getClients() {
+        const response = await fetch(`${this.BASE_URL}/clients`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
+    },
+
+    async registerClient(id, name, email, db_url) {
+        const response = await fetch(`${this.BASE_URL}/clients/register`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id,
+                name,
+                email,
+                db_url
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
+
     }
 };

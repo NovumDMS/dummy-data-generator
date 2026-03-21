@@ -7,23 +7,57 @@
     <h2>Welcome to Dummy Data Generator</h2>
     <p>Generate realistic dummy data for your PostgreSQL databases with ease.</p>
     
-    <div class="features">
-        <div class="feature-card">
-            <h3>Easy Integration</h3>
-            <p>Connect to multiple PostgreSQL databases and generate data seamlessly.</p>
+    <select name="client" id="clientSelect" class="client-select">
+        <!-- Options will be populated dynamically -->
+    </select>
+
+    <div class="selectors-container">
+        <div class="selector-container">
+            <label for="clientCustomers">Customers:</label>
+            <select name="customers" id="clientCustomers" class="client-data-select">
+            <!-- Options will be populated dynamically -->
+            </select>
         </div>
-        <div class="feature-card">
-            <h3>Secure Authentication</h3>
-            <p>JWT-based authentication for secure API access.</p>
+        <div class="selector-container">
+            <label for="clientItems">Items:</label>
+            <select name="items" id="clientItems" class="client-data-select">
+                <!-- Options will be populated dynamically -->
+            </select>
         </div>
-        <div class="feature-card">
-            <h3>Data Management</h3>
-            <p>Manage and organize your dummy data generation tasks.</p>
+        <div class="selector-container">
+            <label for="clientSuppliers">Suppliers:</label>
+            <select name="suppliers" id="clientSuppliers" class="client-data-select">
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div class="selector-container">
+            <label for="clientBuyers">Buyers:</label>
+            <select name="buyers" id="clientBuyers" class="client-data-select">
+                <!-- Options will be populated dynamically -->
+            </select>
         </div>
     </div>
 
-    <div class="cta">
-        <a href="/login" class="btn btn-primary">Get Started</a>
+    <div class="generation-btn-container">
+        <button id="generateSOButton" class="btn btn-primary">Generate Sales Orders</button>
+        <button id="generatePOButton" class="btn btn-primary">Generate Purchase Orders</button>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const clients = await API.getClients();
+            const clientSelect = document.getElementById('clientSelect');
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.client_name} (ID: ${client.client_id})`;
+                clientSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error fetching clients:', error);
+        }
+    });
+</script>
 {% endblock %}

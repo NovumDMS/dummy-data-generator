@@ -1,9 +1,14 @@
+import os
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.client import Clients
 from app.schemas import ClientCreate
 from app.security.access import login_required
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
@@ -19,17 +24,17 @@ def get_clients(request: Request, response: Response, db: Session = Depends(get_
 @login_required
 def register_client(client: ClientCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Register a new client"""
-    try:
-        Clients.add_new_client(db, client.client_id, client.client_name, client.client_db_url)
-    except ValueError as e:
+    existing_client = db.query(Clients).filter(Clients.client_id == client.client_id).first()
+    if existing_client:
+        logger.warning(f"Registration attempt with existing client ID: {client.client_id} from IP: {request.client.host}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="Client ID already registered"  
         )
+    
+    Clients.add_new_client(db, client.client_id, client.client_name, client.client_db_url)
     return {
-        "message": "Client registered successfully",
-        "client_id": client.client_id,
-        "status_code": status.HTTP_201_CREATED
+        "message": "Client registered successfully"
     }
 
 @router.delete("/{client_id}")

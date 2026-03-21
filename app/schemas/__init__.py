@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation schema"""
     password: str
+    email: Optional[EmailStr] = None
     is_admin: bool = False
     
 
@@ -19,6 +20,7 @@ class ClientCreate(BaseModel):
     """Client creation schema"""
     client_id: str
     client_name: str
+    email: Optional[EmailStr] = None
     client_db_url: str
 
 

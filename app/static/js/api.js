@@ -116,18 +116,22 @@ const API = {
     },
 
     async registerClient(id, name, email, db_url) {
+        const body = {
+            "client_id": id,
+            "name": name,
+            "db_url": db_url
+        }
+        if (email) {
+            body.email = email;
+        }
         const response = await fetch(`${this.BASE_URL}/clients/register`, {
             method: 'POST',
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                id,
-                name,
-                email,
-                db_url
-            })
+            body: JSON.stringify(body)
+
         });
 
         const data = await response.json();
@@ -137,6 +141,13 @@ const API = {
         }
 
         return data;
+    },
 
+    async getClientData(clientId) {
+        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/data`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+        });
     }
 };

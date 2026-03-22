@@ -54,7 +54,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     """Register a new user"""
     # Check if user already exists
     existing_user = db.query(Users).filter(
-        (Users.username == user.username)
+        (Users.username == user.username) | (Users.email == user.email)
     ).first()
     
     if existing_user:
@@ -66,7 +66,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     
     # Create new user
     hashed_password = hash_password(user.password)
-    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin)
+    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
     logger.info(f"User registered successfully: {user.username} from IP: {get_ip_from_request(request)}")
     return {"message": f"User {user.username} registered successfully"}
 

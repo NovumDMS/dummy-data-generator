@@ -8,6 +8,7 @@
     <p>Generate realistic dummy data for your PostgreSQL databases with ease.</p>
     
     <select name="client" id="clientSelect" class="client-select">
+        <option value="">Select a client...</option>
         <!-- Options will be populated dynamically -->
     </select>
 
@@ -45,10 +46,11 @@
 </div>
 
 <script>
+    const clientSelect = document.getElementById('clientSelect');
+
     document.addEventListener("DOMContentLoaded", async () => {
         try {
             const clients = await API.getClients();
-            const clientSelect = document.getElementById('clientSelect');
             clients.forEach(client => {
                 const option = document.createElement('option');
                 option.value = client.id;
@@ -57,6 +59,26 @@
             });
         } catch (error) {
             console.error('Error fetching clients:', error);
+        }
+    });
+
+    clientSelect.addEventListener('change', async (event) => {
+        const clientId = event.target.value;
+        if (clientId) {
+            try {
+                const data = await API.getClientData(clientId);
+                populateClientDataSelect('clientCustomers', data.customers);
+                populateClientDataSelect('clientItems', data.items);
+                populateClientDataSelect('clientSuppliers', data.suppliers);
+                populateClientDataSelect('clientBuyers', data.buyers);
+            } catch (error) {
+                console.error('Error fetching client data:', error);
+            }
+        } else {
+            clearClientDataSelect('clientCustomers');
+            clearClientDataSelect('clientItems');
+            clearClientDataSelect('clientSuppliers');
+            clearClientDataSelect('clientBuyers');
         }
     });
 </script>

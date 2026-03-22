@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
 from app.database import get_db, Base, gen_uuid
-from app.helper.hash_helper import hash_db_url, verify_db_url
+from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
 
 db = get_db()
 
@@ -19,13 +19,14 @@ class Clients(Base):
     last_generated_by = Column(String(255), nullable=True)
     last_generated_at = Column(DateTime, nullable=True)
     deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted
+    email = Column(String(255), nullable=True)
 
     @staticmethod
-    def add_new_client(db, client_id: str, client_name: str, client_db_url: str, last_generated_by: str = None, last_generated_ip: str = None):
+    def add_new_client(db, client_id: str, client_name: str, client_db_url: str, email: str = None, last_generated_by: str = None, last_generated_ip: str = None):
         """Add a new client to the database"""
-        allowed_keywords = ("play", "dev", "development")
+        allowed_keywords = ("play", "dev", "development", "etl")
         if any(keyword in client_db_url.lower() for keyword in allowed_keywords):  # Allow only development/test database URLs
-            client_db_url_hash = hash_db_url(client_db_url)
+            client_db_url_hash = encrypt_db_url(client_db_url)
 
             new_client = Clients(
                 id=gen_uuid(),
@@ -34,7 +35,8 @@ class Clients(Base):
                 client_db_url_hash=client_db_url_hash,
                 last_generated_by=last_generated_by,
                 last_generated_ip=last_generated_ip,
-                last_generated_at=datetime.now(timezone.utc)
+                last_generated_at=datetime.now(timezone.utc),
+                email=email
             )
             db.add(new_client)
             db.commit()
@@ -50,7 +52,7 @@ class Clients(Base):
         if not client:
             return False
         
-        return verify_db_url(client.client_db_url_hash)
+        return decrypt_db_url(client.client_db_url_hash)
 
     def log_client_generation(
             self, 

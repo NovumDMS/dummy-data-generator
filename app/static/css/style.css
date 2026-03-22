@@ -139,6 +139,14 @@ main {
     background-color: var(--bg-dark);
 }
 
+.login-container {
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
 .auth-container {
     display: flex;
     justify-content: center;
@@ -146,6 +154,22 @@ main {
     min-height: 60vh;
     gap: 1rem;
     margin-top: 1rem;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-light);
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 400px;
+}
+
+.login-container h1 {
+    text-align: center;
+    margin-bottom: 1rem;
 }
 
 .auth-form {

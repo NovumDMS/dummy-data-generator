@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from app.database import Base, engine
@@ -78,7 +78,7 @@ app.include_router(client.router)
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"message": f"Welcome to the Dummy Data Generator API! Version {app.version}"}
+    return RedirectResponse(url="/dashboard")
 
 
 @app.get("/login")

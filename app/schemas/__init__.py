@@ -19,9 +19,9 @@ class UserCreate(UserBase):
 class ClientCreate(BaseModel):
     """Client creation schema"""
     client_id: str
-    client_name: str
+    name: str
     email: Optional[EmailStr] = None
-    client_db_url: str
+    db_url: str
 
 
 class TokenResponse(BaseModel):

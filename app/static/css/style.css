@@ -139,16 +139,26 @@ main {
     background-color: var(--bg-dark);
 }
 
-.auth-container {
-    display: flex;
-    flex-direction: column;
+.login-container {
     justify-content: center;
     align-items: center;
     min-height: 60vh;
     gap: 1rem;
+    margin-top: 1rem;
 }
 
-.auth-form {
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
     background: var(--bg-light);
     padding: 3rem;
     border-radius: 8px;
@@ -157,10 +167,35 @@ main {
     max-width: 400px;
 }
 
+.login-container h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-light);
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 400px;
+    min-height: 650px;
+    max-height: 650px;
+}
+
 .auth-form h2 {
     text-align: center;
     margin-bottom: 1rem;
     color: #2c3e50;
+}
+
+.auth-form form {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
 }
 
 .form-group {
@@ -205,7 +240,8 @@ main {
 }
 
 #loginMessage,
-#registerMessage {
+#registerMessage,
+#registerClientMessage {
     margin-top: 1rem;
     padding: 1rem;
     text-align: center;
@@ -217,6 +253,10 @@ main {
 }
 
 #registerMessage {
+    color: green;
+}
+
+#registerClientMessage {
     color: green;
 }
 
@@ -286,6 +326,49 @@ main {
 
 .btn-primary:hover {
     background-color: #2980b9;
+}
+
+
+/* Dashboard */
+.client-select {
+    margin-bottom: 1rem;
+    width: 60%;
+    padding: 0.75rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
+    background: var(--bg-card);
+}
+
+.selectors-container {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    min-height: 50px;
+}
+
+.selector-container {
+    display: flex;
+    gap: 1rem;
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.client-data-select {
+    flex: 1;
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.generation-btn-container {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
 /* Footer */

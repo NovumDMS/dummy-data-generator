@@ -132,36 +132,6 @@ def login_required(func):
         if not payload:
             return _redirect_to_login(request, "Session expired. Please log in again", "warning")
 
-        result = func(*args, **kwargs)
-        if inspect.isawaitable(result):
-            result = await result
-
-        _attach_refreshed_access_cookie(result, response, refreshed_access_token)
-        return result
-
-    return wrapper
-
-
-def admin_required(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        request = _extract_request(args, kwargs)
-        response = _extract_response(args, kwargs)
-
-        if not request:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Request context not found",
-            )
-
-        if not request.cookies.get("access_token") and not request.cookies.get("refresh_token"):
-            return _redirect_to_login(request, "Please log in to continue", "info")
-
-        payload, refreshed_access_token = _get_authenticated_payload(request)
-
-        if not payload:
-            return _redirect_to_login(request, "Session expired. Please log in again", "warning")
-
         if not payload.get("is_admin"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

@@ -2,7 +2,6 @@
 from datetime import datetime, timezone
 import os
 import logging
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -56,11 +55,11 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     """Register a new user"""
     # Check if user already exists
     existing_user = db.query(Users).filter(
-        (Users.username == user.username)
+        (Users.username == user.username) | (Users.email == user.email)
     ).first()
     
     if existing_user:
-        logger.warning(f"Attempt to register with already taken username: {user.username}")
+        logger.warning(f"Registration attempt with existing username: {user.username} from IP: {get_ip_from_request(request)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"  
@@ -68,18 +67,12 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     
     # Create new user
     hashed_password = hash_password(user.password)
-<<<<<<< Updated upstream
+    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
+    logger.info(f"User registered successfully: {user.username} from IP: {get_ip_from_request(request)}")
+    return {"message": f"User {user.username} registered successfully"}
     db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin)
     logger.info(f"New user registered: {user.username} (Admin: {user.is_admin})")
     return db_user
-=======
-    Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
-    logger.info(f"New user registered: {user.username} (Admin: {user.is_admin})")
-    return {
-        "message": "User registered successfully",
-        "status_code": status.HTTP_201_CREATED
-    }
->>>>>>> Stashed changes
 
 
 @router.post("/login")
@@ -89,7 +82,35 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     user = db.query(Users).filter(Users.username == credentials.username).first()
     
     if not user:
-<<<<<<< Updated upstream
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+    
+    if not user.is_active:
+        logger.warning(f"Login attempt for inactive user: {user.username} from IP: {get_ip_from_request(request)}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive"
+        )
+    
+    lockout_utc = _to_utc_aware(user.lockout_time)
+    
+    if lockout_utc and lockout_utc > datetime.now(timezone.utc):
+        logger.warning(f"Login attempt for locked out user: {user.username} from IP: {get_ip_from_request(request)}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account locked until {lockout_utc.isoformat()}"
+        )
+    
+    if not verify_password(credentials.password, user.password_hash):
+        user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False)
+        logger.warning(f"Invalid password attempt for user: {user.username} from IP: {get_ip_from_request(request)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
+        )
+
         return {
             "error": "Invalid username or password",
             "status_code": status.HTTP_401_UNAUTHORIZED
@@ -98,12 +119,6 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     if not verify_password(credentials.password, user.password_hash):
         user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False)
         AuthenticationLogs.track_user_logging(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False, event_notes="Invalid password")
-=======
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
->>>>>>> Stashed changes
         return {
             "error": "Invalid username or password",
             "status_code": status.HTTP_401_UNAUTHORIZED
@@ -138,7 +153,7 @@ def login(response: Response, credentials: LoginRequest, request: Request, db: S
     access_token = create_access_token(token_payload)
     refresh_token = create_refresh_token(token_payload)
     user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=True)
-    logger.info(f"User logged in successfully: {user.username} (ID: {user.id})")
+    logger.info(f"User logged in successfully: {user.username} from IP: {get_ip_from_request(request)}")
 
     _set_token_cookie(response, "access_token", access_token, _access_cookie_max_age())
     _set_token_cookie(response, "refresh_token", refresh_token, _refresh_cookie_max_age())

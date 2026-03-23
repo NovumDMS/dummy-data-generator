@@ -7,8 +7,6 @@ from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 from app.database import get_db, Base, gen_uuid
 from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
 
-load_dotenv('working.env')
-
 db = get_db()
 
 def check_client_db_whitelist(client_db_url: str) -> bool:
@@ -28,13 +26,13 @@ class Clients(Base):
     last_generated_by = Column(String(255), nullable=True)
     last_generated_at = Column(DateTime, nullable=True)
     deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted
-    email = Column(String(255), nullable=True)  # Optional email field for client notifications
+    email = Column(String(255), nullable=True)
 
     @staticmethod
-    def add_new_client(db, client_id: str, client_name: str, client_db_url: str, last_generated_by: str = None, last_generated_ip: str = None, email: str = None):
+    def add_new_client(db, client_id: str, client_name: str, client_db_url: str, email: str = None, last_generated_by: str = None, last_generated_ip: str = None):
         """Add a new client to the database"""
-        allowed_keywords = ("play", "dev", "development")
-        if any(keyword in client_db_url.lower() for keyword in allowed_keywords) and check_client_db_whitelist(client_db_url):  # Allow only development/test database URLs
+        allowed_keywords = ("play", "dev", "development", "etl")
+        if any(keyword in client_db_url.lower() for keyword in allowed_keywords):  # Allow only development/test database URLs
             client_db_url_hash = encrypt_db_url(client_db_url)
 
             new_client = Clients(
@@ -46,7 +44,6 @@ class Clients(Base):
                 last_generated_ip=last_generated_ip,
                 last_generated_at=datetime.now(timezone.utc),
                 email=email
-
             )
             db.add(new_client)
             db.commit()

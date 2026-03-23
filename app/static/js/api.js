@@ -8,7 +8,7 @@ const API = {
     /**
      * Register a new user
      */
-    async register(username, email, password) {
+    async registerUser(username, email, password) {
         const response = await fetch(`${this.BASE_URL}/auth/register`, {
             method: 'POST',
             credentials: 'include',
@@ -21,13 +21,14 @@ const API = {
                 password
             })
         });
+
+        const data = await response.json();
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Registration failed');
+            throw new Error(data.detail || 'Registration failed');
         }
         
-        return await response.json();
+        return data.message || 'Registration successful';
     },
     
     /**
@@ -48,8 +49,8 @@ const API = {
         
         const data = await response.json();
 
-        if (data.error) {
-            throw new Error(data.error);
+        if (!response.ok) {
+            throw new Error(data.detail);
         }
 
         window.location.href = '/dashboard';
@@ -93,5 +94,60 @@ const API = {
         }
         
         return headers;
+    },
+
+    /**
+     * 
+     */
+    async getClients() {
+        const response = await fetch(`${this.BASE_URL}/clients`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
+    },
+
+    async registerClient(id, name, email, db_url) {
+        const body = {
+            "client_id": id,
+            "name": name,
+            "db_url": db_url
+        }
+        if (email) {
+            body.email = email;
+        }
+        const response = await fetch(`${this.BASE_URL}/clients/register`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
+    },
+
+    async getClientData(clientId) {
+        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/data`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+        });
     }
 };

@@ -19,7 +19,7 @@ class GenerationLogs(Base):
     failed_count = Column(Integer, default=0)
     validated_records_count = Column(Integer, default=0)
     successful_generated_ids = Column(JSON, nullable=True)  # List of generated successful file IDs
-    generation_date = Column(DateTime, server_default=datetime.now(timezone.utc).isoformat())
+    generation_date = Column(DateTime)
 
     @staticmethod
     def log_generation(db, client_id: str, user_id: str, generated_file_type: str, success_flag: bool):
@@ -29,7 +29,8 @@ class GenerationLogs(Base):
             client_id=client_id,
             user_id=user_id,
             generated_file_type=generated_file_type,
-            success_flag=success_flag
+            success_flag=success_flag,
+            generation_date=datetime.now(timezone.utc)
         )
         db.add(new_log)
         db.commit()

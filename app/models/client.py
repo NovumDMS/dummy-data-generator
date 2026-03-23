@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
 
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
@@ -6,6 +8,11 @@ from app.database import get_db, Base, gen_uuid
 from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
 
 db = get_db()
+
+def check_client_db_whitelist(client_db_url: str) -> bool:
+    """Check if the client's database URL is in the whitelist"""
+    whitelist = [url.strip() for url in os.getenv("CLIENT_DB_LIST", "").split(",") if url.strip()]
+    return client_db_url in whitelist
 
 class Clients(Base):
     __tablename__ = "clients"

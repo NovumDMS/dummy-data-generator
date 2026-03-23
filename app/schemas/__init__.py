@@ -7,6 +7,8 @@ from typing import Optional
 class UserBase(BaseModel):
     """Base user schema"""
     username: str
+    email: EmailStr
+    is_admin: bool = False
 
 
 class UserCreate(UserBase):

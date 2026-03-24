@@ -8,6 +8,7 @@ from app.models.client import Clients
 from app.schemas import ClientCreate
 from app.security.access import login_required
 from app.helper.client_db_helper import get_client_db_connection, test_client_db_connection
+from app.scripts.client_data_queries import client_customer_query, client_item_query, client_supplier_query
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ def get_client_info(client_id: str, request: Request, response: Response, db: Se
         )
     return client
 
-@router.get("/{client_id}/data")
+@router.get("/{client_id}/customers")
 @login_required
 def get_client_data(client_id: str, request: Request, response: Response, db: Session = Depends(get_db)):
     """Get client data for a specific client by ID"""
@@ -82,13 +83,60 @@ def get_client_data(client_id: str, request: Request, response: Response, db: Se
     try:
         connection = get_client_db_connection(client_id, db)
         with connection.cursor() as cursor:
-            if not test_client_db_connection(client_id, db):
-                logger.warning(f"Failed connection test for client {client.client_name} (ID: {client_id}) from IP: {request.client.host}")
-                raise HTTPException(status_code=400, detail="Failed to connect to client's database. Please check the database URL and try again.")
+            cursor.execute(client_customer_query())
+            customers = cursor.fetchall()
+        return customers
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Database connection error for client {client.client_name} (ID: {client_id}): {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve client data")
+    
+@router.get("/{client_id}/items")
+@login_required
+def get_client_data(client_id: str, request: Request, response: Response, db: Session = Depends(get_db)):
+    """Get client data for a specific client by ID"""
+    client = db.query(Clients).filter(Clients.client_id == client_id).first()
 
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-            tables = cursor.fetchall()
-            return {"tables": [table[0] for table in tables]}
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+    
+    try:
+        connection = get_client_db_connection(client_id, db)
+        with connection.cursor() as cursor:
+            cursor.execute(client_item_query())
+            items = cursor.fetchall()
+            for item in items:
+                if (item['ship_to_id'] is None) or (item['ship_to_id'] == ''):
+                    item['ship_to_id'] = item['customer_id']
+        return items
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Database connection error for client {client.client_name} (ID: {client_id}): {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve client data")
+    
+@router.get("/{client_id}/suppliers")
+@login_required
+def get_client_data(client_id: str, item_id: int, request: Request, response: Response, db: Session = Depends(get_db)):
+    """Get client data for a specific client by ID"""
+    client = db.query(Clients).filter(Clients.client_id == client_id).first()
+
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+    
+    try:
+        connection = get_client_db_connection(client_id, db)
+        with connection.cursor() as cursor:
+            cursor.execute(client_supplier_query(item_id))
+            suppliers = cursor.fetchall()
+        return suppliers
     except HTTPException as e:
         raise e
     except Exception as e:

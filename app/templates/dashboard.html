@@ -16,24 +16,28 @@
         <div class="selector-container">
             <label for="clientCustomers">Customers:</label>
             <select name="customers" id="clientCustomers" class="client-data-select">
+                <option value="">Select a customer...</option>
             <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientItems">Items:</label>
             <select name="items" id="clientItems" class="client-data-select">
+                <option value="">Select an item...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientSuppliers">Suppliers:</label>
             <select name="suppliers" id="clientSuppliers" class="client-data-select">
+                <option value="">Select a supplier...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientBuyers">Buyers:</label>
             <select name="buyers" id="clientBuyers" class="client-data-select">
+                <option value="">Select a buyer...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
@@ -64,21 +68,26 @@
 
     clientSelect.addEventListener('change', async (event) => {
         const clientId = event.target.value;
+        const customerSelect = document.getElementById("clientCustomers");
+        const itemSelect = document.getElementById("clientItems");
+        const supplierSelect = document.getElementById("clientSuppliers");
+        const buyerSelect = document.getElementById("clientBuyers");
+
         if (clientId) {
             try {
-                const data = await API.getClientData(clientId);
-                populateClientDataSelect('clientCustomers', data.customers);
-                populateClientDataSelect('clientItems', data.items);
-                populateClientDataSelect('clientSuppliers', data.suppliers);
-                populateClientDataSelect('clientBuyers', data.buyers);
-            } catch (error) {
-                console.error('Error fetching client data:', error);
+                let customerData = API.getClientCustomers(clientId);
+                let itemData = API.getClientItems(clientId);
+                let supplierData = API.getClientSuppliers(clientId);
+                let buyerData = API.getClientBuyers(clientId);
+            }
+            catch (error) {
+                console.log("Error found when adding data")
             }
         } else {
-            clearClientDataSelect('clientCustomers');
-            clearClientDataSelect('clientItems');
-            clearClientDataSelect('clientSuppliers');
-            clearClientDataSelect('clientBuyers');
+            customerSelect.value = "";
+            itemSelect.value = "";
+            supplierSelect.value = "";
+            buyerSelect.value = "";
         }
     });
 </script>

@@ -1,15 +1,17 @@
-def client_customer_query() -> str:
-    return f"""
-        SELECT C.customer_id, C.customer_name, C.company_id, C.credit_limit, C.credit_status, S.ship_to_id
+import sqlalchemy as sa
+
+def client_customer_query() -> sa.text:
+    return sa.text(f"""
+        SELECT C.customer_id, C.customer_name, S.ship_to_id
         FROM p21s_customer C
             JOIN p21s_ship_to S ON S.customer_id = C.customer_id
-        WHERE credit_limit > 5000
-            AND (credit_status = 'GOOD' OR credit_status = 'OPEN')
-            AND delete_flag = 'N';
-    """
+        WHERE C.credit_limit > 5000
+            AND (C.credit_status = 'GOOD' OR C.credit_status = 'OPEN')
+            AND C.delete_flag = 'N';
+    """)
 
-def client_data_query() -> str:
-    return f"""
+def client_data_query() -> sa.text:
+    return sa.text(f"""
         WITH default_buyer AS (
             SELECT
                 id,
@@ -46,4 +48,4 @@ def client_data_query() -> str:
         AND L.qty_on_hand > 0
         AND L.delete_flag = 'N'
         AND S.delete_flag = 'N';
-    """
+    """)

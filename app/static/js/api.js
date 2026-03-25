@@ -144,7 +144,7 @@ const API = {
     },
 
     async getClientCustomers(clientId) {
-        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/customers`, {
+        const response = await fetch(`${this.BASE_URL}/clients/customers?client_id=${encodeURIComponent(clientId)}`, {
             method: 'GET',
             credentials: 'include',
             headers: this.getAuthHeaders(),
@@ -159,40 +159,8 @@ const API = {
         return data;
     },
 
-    async getClientItems(clientId) {
-        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/items`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: this.getAuthHeaders(),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.detail);
-        }
-
-        return data;
-    },
-
-    async getClientSuppliers(clientId, itemId) {
-        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/suppliers?item_id=${encodeURIComponent(itemId)}`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: this.getAuthHeaders(),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.detail);
-        }
-
-        return data;
-    },
-
-    async getClientBuyers(clientId) {
-        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/buyers`, {
+    async getClientData(clientId) {
+        const response = await fetch(`${this.BASE_URL}/clients/data?client_id=${encodeURIComponent(clientId)}`, {
             method: 'GET',
             credentials: 'include',
             headers: this.getAuthHeaders(),

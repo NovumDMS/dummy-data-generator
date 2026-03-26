@@ -6,7 +6,7 @@ def client_customer_query() -> sa.text:
         FROM p21s_customer C
             JOIN p21s_ship_to S ON S.customer_id = C.customer_id
         WHERE C.credit_limit > 5000
-            AND (C.credit_status = 'GOOD' OR C.credit_status = 'OPEN')
+            AND C.credit_status NOT IN ('HOLD', 'CC', 'COD')
             AND C.delete_flag = 'N';
     """)
 

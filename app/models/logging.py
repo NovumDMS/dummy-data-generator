@@ -22,13 +22,13 @@ class GenerationLogs(Base):
     generation_date = Column(DateTime)
 
     @staticmethod
-    def log_generation(db, client_id: str, user_id: str, generated_file_type: str, success_flag: bool):
-        """Log a new generation event to the database"""
+    def log_so_generation(db, client_id: str, user_id: str, success_flag: bool):
+        """Log a new sales order generation event to the database"""
         new_log = GenerationLogs(
             id=gen_uuid(),
             client_id=client_id,
             user_id=user_id,
-            generated_file_type=generated_file_type,
+            generated_file_type="SO",
             success_flag=success_flag,
             generation_date=datetime.now(timezone.utc)
         )
@@ -37,6 +37,60 @@ class GenerationLogs(Base):
         db.refresh(new_log)
         return new_log
     
+    @staticmethod
+    def pull_so_logs(db):
+        """Pull generation logs for a specific client and user"""
+        logs = db.query(GenerationLogs).filter(GenerationLogs.generated_file_type == "SO" and GenerationLogs.success_flag == True).order_by(GenerationLogs.generation_date.desc()).all()
+        formatted_logs = []
+        for log in logs:
+            formatted_log = {
+                "id": str(log.id),
+                "client_id": str(log.client_id),
+                "user_id": str(log.user_id),
+                "total_records_generated": log.total_records_generated,
+                "successful_count": log.successful_count,
+                "failed_count": log.failed_count,
+                "validated_records_count": log.validated_records_count,
+                "generation_date": log.generation_date.isoformat()
+            }
+            formatted_logs.append(formatted_log)
+        return formatted_logs
+    
+    @staticmethod
+    def log_po_generation(db, client_id: str, user_id: str, success_flag: bool):
+        """Log a new purchase order generation event to the database"""
+        new_log = GenerationLogs(
+            id=gen_uuid(),
+            client_id=client_id,
+            user_id=user_id,
+            generated_file_type="PO",
+            success_flag=success_flag,
+            generation_date=datetime.now(timezone.utc)
+        )
+        db.add(new_log)
+        db.commit()
+        db.refresh(new_log)
+        return new_log
+    
+    @staticmethod
+    def pull_po_logs(db):
+        """Pull generation logs for a specific client and user"""
+        logs = db.query(GenerationLogs).filter(GenerationLogs.generated_file_type == "PO").order_by(GenerationLogs.generation_date.desc()).all()
+        formatted_logs = []
+        for log in logs:
+            formatted_log = {
+                "id": str(log.id),
+                "client_id": str(log.client_id),
+                "user_id": str(log.user_id),
+                "total_records_generated": log.total_records_generated,
+                "successful_count": log.successful_count,
+                "failed_count": log.failed_count,
+                "validated_records_count": log.validated_records_count,
+                "generation_date": log.generation_date.isoformat()
+            }
+            formatted_logs.append(formatted_log)
+        return formatted_logs
+
     @staticmethod
     def update_generation_log(db, log_id: str, total_records_generated: int, successful_count: int, failed_count: int, validated_records_count: int, successful_generated_ids: list):
         """Update an existing generation log with results"""

@@ -16,24 +16,28 @@
         <div class="selector-container">
             <label for="clientCustomers">Customers:</label>
             <select name="customers" id="clientCustomers" class="client-data-select">
+                <option value="">Select a customer...</option>
             <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientItems">Items:</label>
             <select name="items" id="clientItems" class="client-data-select">
+                <option value="">Select an item...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientSuppliers">Suppliers:</label>
             <select name="suppliers" id="clientSuppliers" class="client-data-select">
+                <option value="">Select a supplier...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
         <div class="selector-container">
             <label for="clientBuyers">Buyers:</label>
             <select name="buyers" id="clientBuyers" class="client-data-select">
+                <option value="">Select a buyer...</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
@@ -62,24 +66,122 @@
         }
     });
 
-    clientSelect.addEventListener('change', async (event) => {
+    const itemSelect = document.getElementById("clientItems");
+    const supplierSelect = document.getElementById("clientSuppliers");
+    const buyerSelect = document.getElementById("clientBuyers");
+
+    let allClientData = [];
+
+    const filters = {
+        itemId: null,
+        supplierId: null,
+        buyerId: null
+    };
+
+    function getFilteredRows() {
+        return allClientData.filter(row => {
+            return (!filters.itemId || String(row.inv_mast_uid) === String(filters.itemId)) &&
+                (!filters.supplierId || String(row.supplier_id) === String(filters.supplierId)) &&
+                (!filters.buyerId || String(row.buyer_id) === String(filters.buyerId));
+        });
+    }
+
+    function buildUniqueOptions(rows, idKey, nameKey) {
+        const map = new Map();
+
+        rows.forEach(row => {
+            const id = row[idKey];
+            const name = row[nameKey];
+
+            if (id !== null && id !== undefined && id !== "") {
+                map.set(String(id), {
+                    id: String(id),
+                    name: name
+                });
+            }
+        });
+
+        return Array.from(map.values());
+    }
+
+    function populateSelect(selectEl, options, placeholder, selectedValue) {
+        selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+
+        options.forEach(optionData => {
+            const option = document.createElement("option");
+            option.value = optionData.id;
+            option.textContent = optionData.name;
+            selectEl.appendChild(option);
+        });
+
+        const isValidSelection = options.some(option => option.id === String(selectedValue));
+        selectEl.value = isValidSelection ? String(selectedValue) : "";
+        return isValidSelection ? String(selectedValue) : null;
+    }
+
+    function updateSelectOptions(rows) {
+        const supplierOptions = buildUniqueOptions(rows, "supplier_id", "supplier_name");
+        const buyerOptions = buildUniqueOptions(rows, "buyer_id", "buyer_name");
+        const itemOptions = buildUniqueOptions(rows, "inv_mast_uid", "item_desc");
+
+        filters.itemId = populateSelect(itemSelect, itemOptions, "Select an item...", filters.itemId);
+        filters.supplierId = populateSelect(supplierSelect, supplierOptions, "Select a supplier...", filters.supplierId);
+        filters.buyerId = populateSelect(buyerSelect, buyerOptions, "Select a buyer...", filters.buyerId);
+    }
+
+    function refreshSelectors() {
+        const filteredRows = getFilteredRows();
+        updateSelectOptions(filteredRows);
+    }
+
+    clientSelect.addEventListener("change", async (event) => {
         const clientId = event.target.value;
+        const customerSelect = document.getElementById("clientCustomers");
+
         if (clientId) {
             try {
-                const data = await API.getClientData(clientId);
-                populateClientDataSelect('clientCustomers', data.customers);
-                populateClientDataSelect('clientItems', data.items);
-                populateClientDataSelect('clientSuppliers', data.suppliers);
-                populateClientDataSelect('clientBuyers', data.buyers);
+                const customerData = await API.getClientCustomers(clientId);
+                allClientData = await API.getClientData(clientId);
+
+                filters.itemId = null;
+                filters.supplierId = null;
+                filters.buyerId = null;
+
+                customerSelect.innerHTML = `<option value="">Select a customer...</option>`;
+                customerData.forEach(customer => {
+                    const option = document.createElement("option");
+                    option.value = customer.ship_to_id;
+                    option.textContent = `${customer.customer_name} (ID: ${customer.ship_to_id})`;
+                    customerSelect.appendChild(option);
+                });
+
+                refreshSelectors();
             } catch (error) {
-                console.error('Error fetching client data:', error);
+                console.log("Error found when adding data", error);
             }
         } else {
-            clearClientDataSelect('clientCustomers');
-            clearClientDataSelect('clientItems');
-            clearClientDataSelect('clientSuppliers');
-            clearClientDataSelect('clientBuyers');
+            allClientData = [];
+            filters.itemId = null;
+            filters.supplierId = null;
+            filters.buyerId = null;
+            customerSelect.value = "";
+            refreshSelectors();
         }
+    });
+
+    itemSelect.addEventListener("change", (event) => {
+        filters.itemId = event.target.value || null;
+        refreshSelectors();
+    });
+
+    supplierSelect.addEventListener("change", (event) => {
+        filters.supplierId = event.target.value || null;
+        refreshSelectors();
+    });
+
+    buyerSelect.addEventListener("change", (event) => {
+        filters.buyerId = event.target.value || null;
+        refreshSelectors();
     });
 </script>
 {% endblock %}

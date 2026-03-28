@@ -55,7 +55,7 @@ class Clients(Base):
     @staticmethod
     def check_client_db_url(db, client_id: str) -> bool:
         """Check if the provided client database URL matches the stored hash"""
-        client = db.query(Clients).filter(Clients.client_id == client_id).first()
+        client = db.query(Clients).filter(Clients.id == client_id).first()
         if not client:
             return False
         
@@ -68,7 +68,7 @@ class Clients(Base):
             generated_by: str, 
             generated_ip: str):
         """Log client generation activity"""
-        client = db.query(Clients).filter(Clients.client_id == client_id).first()
+        client = db.query(Clients).filter(Clients.id == client_id).first()
         if not client:
             return None
         

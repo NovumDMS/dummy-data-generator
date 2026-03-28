@@ -143,11 +143,35 @@ const API = {
         return data;
     },
 
-    async getClientData(clientId) {
-        const response = await fetch(`${this.BASE_URL}/clients/${clientId}/data`, {
+    async getClientCustomers(clientId) {
+        const response = await fetch(`${this.BASE_URL}/clients/customers?client_id=${encodeURIComponent(clientId)}`, {
             method: 'GET',
             credentials: 'include',
             headers: this.getAuthHeaders(),
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
+    },
+
+    async getClientData(clientId) {
+        const response = await fetch(`${this.BASE_URL}/clients/data?client_id=${encodeURIComponent(clientId)}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail);
+        }
+
+        return data;
     }
 };

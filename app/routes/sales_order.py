@@ -9,6 +9,8 @@ from app.security.access import login_required
 from app.models.logging import GenerationLogs
 from app.schemas import SalesOrderHdrCreate
 
+from app.helper.sales_order_helper import get_client_main_location, get_random_taker, generate_order_no
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/sales_orders", tags=["sales_orders"])
@@ -23,14 +25,28 @@ def get_sales_orders(request: Request, response: Response, db: Session = Depends
         "sales_orders": logs
     }
 
-@router.post("/generate-hdr")
+@router.post("/generate")
 @login_required
-def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, request: Request, response: Response, db: Session = Depends(get_db)):
+async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Endpoint to trigger sales order header generation"""
     # customer_id, company_id, location_id, ship_to_id, taker, order_date
-    customer_id = sales_order_data.customer_id
-    company_id = sales_order_data.company_id
-    ship_to_id = sales_order_data.ship_to_id
-    location_id = sa.query(sa.text(f"SELECT location_id FROM p21s_locations WHERE company_id = {sales_order_data.company_id} LIMIT 1")).scalar()
-    taker = get_random_taker() # This function should use the oe_hdr table.
-    order_date = datetime.now()
+    client_id = sales_order_data.client_id
+    order_no = generate_order_no()
+
+    data = {
+        "customer_id": sales_order_data.customer_id,
+        "company_id": sales_order_data.company_id,
+        "location_id": get_client_main_location(client_id, db),
+        "ship_to_id": sales_order_data.ship_to_id if sales_order_data.ship_to_id else sales_order_data.customer_id,
+        "taker": get_random_taker(client_id, db),
+        "order_date": datetime.now(),
+        "order_no": order_no,
+        "po_no": f"Dummy Data {order_no}"
+    }
+
+    await insert_hdr(data)
+
+async def insert_hdr(data):
+    """Insert a new record into the sales order header table"""
+    # This function should use the client database connection to insert a new record into the appropriate table.
+    pass

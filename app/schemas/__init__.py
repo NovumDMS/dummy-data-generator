@@ -40,7 +40,7 @@ class LoginRequest(BaseModel):
 class SalesOrderHdrCreate(BaseModel):
     """Sales order header creation schema"""
     # Define fields for sales order header creation as needed
+    client_id: str
     customer_id: str
     company_id: str
     ship_to_id: Optional[str] = None
-    taker: Optional[str] = None

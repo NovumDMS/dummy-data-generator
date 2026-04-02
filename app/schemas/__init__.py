@@ -43,4 +43,5 @@ class SalesOrderHdrCreate(BaseModel):
     client_id: str
     customer_id: str
     company_id: str
+    number_of_items: int = 5
     ship_to_id: Optional[str] = None

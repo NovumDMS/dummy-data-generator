@@ -9,7 +9,7 @@ from app.models.client import Clients
 from app.schemas import ClientCreate
 from app.security.access import login_required
 from app.helper.client_db_helper import get_client_db_connection
-from app.scripts.client_data_queries import client_customer_query, client_data_query
+from app.scripts.data_queries import client_customer_query, client_data_query
 
 logger = logging.getLogger(__name__)
 

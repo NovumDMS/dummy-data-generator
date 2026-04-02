@@ -3,6 +3,7 @@ from fastapi import Depends
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from app.database import get_db
+import app.scripts.data_queries as queries
 
 def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
     """Fetch the main location for the client"""
@@ -24,3 +25,18 @@ def generate_order_no():
     """Generate a random order number"""
     import random
     return f"98{random.randint(10000, 99999)}"
+
+def get_random_items(client_id: str, number_of_items: int, db: Session = Depends(get_db)):
+    """Generate random items for the sales order"""
+    # This is a placeholder function. You can implement logic to fetch random items from the database or generate them as needed.
+    items = []
+
+    with get_client_db_connection(client_id, db) as conn:
+        items = conn.execute(queries.client_data_query()).fetchall()
+        conn.close()
+
+    for i in range(number_of_items):
+        import random
+        items.append(random.choice(items))
+
+    return items

@@ -46,6 +46,7 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
     location_id = await get_client_main_location(client_id, db)
     taker = await get_random_taker(client_id, db)
     items = await get_random_items(client_id, number_of_items, db)
+    import_set_no = 1 # This should increment if we generate more than one sales order
 
     # Generate a unique order number starting in 98*****
     order_no = generate_order_no()
@@ -57,7 +58,7 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
     header_data = HDR_DEFAULT_STRUCTURE.copy()
     header_data.update({
         # Required header columns
-        "import_set_no": order_no,
+        "import_set_no": import_set_no,
         "customer_id": customer_id,
         "customer_name": customer_name,
         "company_id": company_id,
@@ -79,7 +80,7 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
     for item in items:
         line_data = LINE_DEFAULT_STRUCTURE.copy()
         line_data.update({
-            "import_set_no": order_no,
+            "import_set_no": import_set_no,
             "line_no": line_no,
             "item_id": item["item_id"],
             "unit_quantity": random.randint(1, item["qty_available"]),  # Random quantity up to available stock

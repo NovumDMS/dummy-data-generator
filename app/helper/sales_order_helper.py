@@ -44,7 +44,7 @@ def get_random_items(client_id: str, number_of_items: int, db: Session = Depends
 def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)):
     """Fetch ship_to_name based on ship_to_id"""
     with get_client_db_connection(client_id, db) as conn:
-        ship_to_name = conn.execute(sa.text("SELECT ship_to_name FROM p21s_ship_to WHERE ship_to_id = :ship_to_id"), {"ship_to_id": ship_to_id}).scalar()
+        ship_to_name = conn.execute(sa.text("SELECT ship2_name FROM p21s_oe_hdr WHERE ship_to_id = :ship_to_id"), {"ship_to_id": ship_to_id}).scalar()
     return ship_to_name
 
 HDR_DEFAULT_STRUCTURE = {

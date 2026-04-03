@@ -42,6 +42,7 @@ class SalesOrderHdrCreate(BaseModel):
     # Define fields for sales order header creation as needed
     client_id: str
     customer_id: str
+    customer_name: str
     company_id: str
     number_of_items: int = 5
     ship_to_id: Optional[str] = None

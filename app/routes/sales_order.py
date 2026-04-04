@@ -29,7 +29,7 @@ def get_sales_orders(request: Request, response: Response, db: Session = Depends
     }
 
 @router.post("/generate")
-@login_required
+# @login_required
 async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Endpoint to trigger sales order header generation"""
     # customer_id, company_id, location_id, ship_to_id, taker, order_date
@@ -43,9 +43,9 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
     ship_to_id = sales_order_data.ship_to_id if sales_order_data.ship_to_id else customer_id
     number_of_items = sales_order_data.number_of_items  # For example, you can make this dynamic based on your needs
 
-    location_id = await get_client_main_location(client_id, db)
-    taker = await get_random_taker(client_id, db)
-    items = await get_random_items(client_id, number_of_items, db)
+    location_id = get_client_main_location(client_id, db)
+    taker = get_random_taker(client_id, db)
+    items = get_random_items(client_id, number_of_items, db)
     import_set_no = 1 # This should increment if we generate more than one sales order
 
     # Generate a unique order number starting in 98*****
@@ -53,7 +53,7 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
 
     contact_id = items[0]["contact_id"] if items else None  # Assuming contact_id can be derived from the first item
     contact_name = items[0]["contact_name"] if items else None  # Assuming contact_name can be derived from the first item
-    ship_to_name = await get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
+    ship_to_name = get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
 
     header_data = HDR_DEFAULT_STRUCTURE.copy()
     header_data.update({
@@ -83,7 +83,7 @@ async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, reques
             "import_set_no": import_set_no,
             "line_no": line_no,
             "item_id": item["item_id"],
-            "unit_quantity": random.randint(1, item["qty_available"]),  # Random quantity up to available stock
+            "unit_quantity": random.randint(1, int(item["qty_available"])),  # Random quantity up to available stock
             "unit_of_measure": item["base_unit"],
             "capture_usage": 'Y'
         })

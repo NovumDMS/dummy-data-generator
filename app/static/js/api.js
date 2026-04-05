@@ -173,5 +173,22 @@ const API = {
         }
 
         return data;
+    },
+
+    async generateSalesOrder(payload) {
+        const response = await fetch(`${this.BASE_URL}/sales_orders/generate`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: this.getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Failed to generate sales order');
+        }
+
+        return data;
     }
 };

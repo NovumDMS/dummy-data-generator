@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.security.access import login_required
 from app.models.logging import GenerationLogs
-from app.schemas import SalesOrderHdrCreate
+from app.schemas import SalesOrderCreate
 
 from app.helper.sales_order_helper import get_client_main_location, get_random_items, get_random_taker, generate_order_no, get_ship_to_name, HDR_DEFAULT_STRUCTURE, LINE_DEFAULT_STRUCTURE
 
@@ -29,8 +29,8 @@ def get_sales_orders(request: Request, response: Response, db: Session = Depends
     }
 
 @router.post("/generate")
-# @login_required
-async def generate_sales_order_hdr(sales_order_data: SalesOrderHdrCreate, request: Request, response: Response, db: Session = Depends(get_db)):
+@login_required
+async def generate_sales_order_hdr(sales_order_data: SalesOrderCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Endpoint to trigger sales order header generation"""
     # customer_id, company_id, location_id, ship_to_id, taker, order_date
 

@@ -37,7 +37,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-class SalesOrderHdrCreate(BaseModel):
+class SalesOrderCreate(BaseModel):
     """Sales order header creation schema"""
     # Define fields for sales order header creation as needed
     client_id: str

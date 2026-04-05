@@ -7,7 +7,8 @@ def client_customer_query() -> sa.text:
             JOIN p21s_ship_to S ON S.customer_id = C.customer_id
         WHERE C.credit_limit > 5000
             AND C.credit_status NOT IN ('HOLD', 'CC', 'COD')
-            AND C.delete_flag = 'N';
+                AND C.delete_flag = 'N'
+        ORDER BY C.customer_name;
     """)
 
 def client_data_query() -> sa.text:
@@ -52,5 +53,7 @@ def client_data_query() -> sa.text:
         AND L.buy = 'Y'
         AND L.qty_on_hand > 0
         AND L.delete_flag = 'N'
-        AND S.delete_flag = 'N';
-    """)
+        AND S.delete_flag = 'N'
+        AND L.qty_on_hand - L.qty_allocated - L.qty_backordered > 0;
+    """
+    )

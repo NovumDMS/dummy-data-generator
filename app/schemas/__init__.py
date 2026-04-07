@@ -44,5 +44,7 @@ class SalesOrderCreate(BaseModel):
     customer_id: str
     customer_name: str
     company_id: str
-    number_of_items: int = 5
+    lower_item_count: int = 1
+    upper_item_count: int = 25
+    sales_order_count: int = 5
     ship_to_id: Optional[str] = None

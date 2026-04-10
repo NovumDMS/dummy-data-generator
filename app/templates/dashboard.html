@@ -21,8 +21,19 @@
             </select>
         </div>
         <div class="selector-container">
-            <label for="numberOfItems">Number of items:</label>
-            <input type="number" id="numberOfItems" class="client-data-select" min="1" step="1" value="5" />
+            <label for="lowerItemCount">Min items per order:</label>
+            <input type="number" id="lowerItemCount" class="client-data-select" min="1" step="1" value="1" />
+        </div>
+        <div class="selector-container">
+            <label for="upperItemCount">Max items per order:</label>
+            <input type="number" id="upperItemCount" class="client-data-select" min="1" step="1" value="25" />
+        </div>
+        <div class="selector-container">
+            <label for="salesOrderCount">Number of sales orders:</label>
+            <input type="number" id="salesOrderCount" class="client-data-select" min="0" step="1" value="5" />
+            <label style="margin-top:4px;">
+                <input type="checkbox" id="randomSoCount" /> Random (1–10)
+            </label>
         </div>
     </div>
 
@@ -36,11 +47,18 @@
 <script>
     const clientSelect = document.getElementById('clientSelect');
     const customerSelect = document.getElementById('clientCustomers');
-    const numberOfItemsInput = document.getElementById('numberOfItems');
+    const lowerItemCountInput = document.getElementById('lowerItemCount');
+    const upperItemCountInput = document.getElementById('upperItemCount');
+    const salesOrderCountInput = document.getElementById('salesOrderCount');
+    const randomSoCountCheckbox = document.getElementById('randomSoCount');
     const generateButton = document.getElementById('generateButton');
     const generationStatus = document.getElementById('generationStatus');
 
     let customerLookup = new Map();
+
+    randomSoCountCheckbox.addEventListener('change', () => {
+        salesOrderCountInput.disabled = randomSoCountCheckbox.checked;
+    });
 
     document.addEventListener("DOMContentLoaded", async () => {
         try {
@@ -61,11 +79,15 @@
         generationStatus.style.color = isError ? '#b42318' : '#1f4e79';
     }
 
-    async function generateSalesOrder() {
+    async function generateOrders() {
         const clientId = clientSelect.value;
         const selectedCustomerKey = customerSelect.value;
         const selectedCustomer = customerLookup.get(selectedCustomerKey);
-        const numberOfItems = Number.parseInt(numberOfItemsInput.value, 10);
+        const lowerItemCount = Number.parseInt(lowerItemCountInput.value, 10);
+        const upperItemCount = Number.parseInt(upperItemCountInput.value, 10);
+        const salesOrderCount = randomSoCountCheckbox.checked
+            ? 0
+            : Number.parseInt(salesOrderCountInput.value, 10);
 
         if (!clientId) {
             setStatus('Please select a client.', true);
@@ -77,8 +99,18 @@
             return;
         }
 
-        if (!Number.isInteger(numberOfItems) || numberOfItems < 1) {
-            setStatus('Please enter a valid number of items (minimum 1).', true);
+        if (!Number.isInteger(lowerItemCount) || lowerItemCount < 1) {
+            setStatus('Min items per order must be at least 1.', true);
+            return;
+        }
+
+        if (!Number.isInteger(upperItemCount) || upperItemCount < lowerItemCount) {
+            setStatus('Max items per order must be greater than or equal to min items.', true);
+            return;
+        }
+
+        if (!randomSoCountCheckbox.checked && (!Number.isInteger(salesOrderCount) || salesOrderCount < 1)) {
+            setStatus('Number of sales orders must be at least 1.', true);
             return;
         }
 
@@ -87,24 +119,22 @@
             customer_id: String(selectedCustomer.customer_id),
             customer_name: String(selectedCustomer.customer_name),
             company_id: String(selectedCustomer.company_id),
-            number_of_items: numberOfItems,
+            lower_item_count: lowerItemCount,
+            upper_item_count: upperItemCount,
+            sales_order_count: salesOrderCount,
             ship_to_id: selectedCustomer.ship_to_id ? String(selectedCustomer.ship_to_id) : null
         };
 
         try {
             generateButton.disabled = true;
-            setStatus('Generating sales order...');
-            await API.generateSalesOrder(payload);
-            setStatus('Sales order generation request completed.');
+            setStatus('Generating orders...');
+            await API.generateOrders(payload);
+            setStatus('Orders generated successfully. Download started.');
         } catch (error) {
-            setStatus(`Failed to generate sales order: ${error.message}`, true);
+            setStatus(`Failed to generate orders: ${error.message}`, true);
         } finally {
             generateButton.disabled = false;
         }
-    }
-
-    async function generatePurchaseOrder() {
-        setStatus('Purchase order generation is not implemented yet.', true);
     }
 
     clientSelect.addEventListener("change", async (event) => {
@@ -137,6 +167,6 @@
         }
     });
 
-    generateButton.addEventListener('click', generateSalesOrder);
+    generateButton.addEventListener('click', generateOrders);
 </script>
 {% endblock %}

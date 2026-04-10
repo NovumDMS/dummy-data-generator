@@ -1,62 +1,46 @@
-"""Data Routes (Placeholder for future dummy data endpoints)"""
+"""Data Routes"""
+import logging
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Request, Response
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.security.access import login_required
+from app.schemas import SalesOrderCreate, PurchaseOrderCreate
+from app.helper.file_helper import zip_orders
+from app.scripts.sales_order import generate_sales_orders
+from app.scripts.purchase_order import generate_purchase_orders
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/data", tags=["data"])
 
 
-@router.get("/")
+@router.post("/generate")
 @login_required
-def get_data_info(request: Request, response: Response):
-    """Get info about data generation endpoints"""
-    return {
-        "message": "Data generation endpoints coming soon",
-        "version": "0.1.0"
-    }
+async def generate(order_data: SalesOrderCreate, request: Request, response: Response, db: Session = Depends(get_db)):
+    """Generate sales and purchase orders and return them as a downloadable zip"""
+    generate_sales_orders(order_data, db)
 
-@router.get("/sales-orders")
-@login_required
-def get_sales_orders(request: Request, response: Response):
-    """Get info about sales orders data generation endpoint"""
-    return {
-        "message": "Sales orders data generation endpoint coming soon",
-        "version": "0.1.0"
-    }
+    po_data = PurchaseOrderCreate(
+        client_id=order_data.client_id,
+        customer_id=order_data.customer_id,
+        customer_name=order_data.customer_name,
+        company_id=order_data.company_id,
+        ship_to_id=order_data.ship_to_id,
+        location_id=order_data.location_id,
+    )
+    generate_purchase_orders(po_data, db)
 
-@router.get("/purchase-orders")
-@login_required
-def get_purchase_orders(request: Request, response: Response):
-    """Get info about purchase orders data generation endpoint"""
-    return {
-        "message": "Purchase orders data generation endpoint coming soon",
-        "version": "0.1.0"
-    }
+    project_root = Path(__file__).resolve().parents[2]
+    tsv_dir = project_root / "tsv_files"
+    output_zip = tsv_dir / f"{order_data.client_id}_orders.zip"
+    zip_orders(tsv_dir, output_zip)
 
-@router.post("/generate-sales-orders")
-@login_required
-def generate_sales_orders(request: Request, response: Response):
-    """Generate sales orders data"""
-    return {
-        "message": "Sales orders data generation endpoint coming soon",
-        "version": "0.1.0"
-    }
-
-@router.post("/generate-purchase-orders")
-@login_required
-def generate_purchase_orders(request: Request, response: Response):
-    """Generate purchase orders data"""
-    return {
-        "message": "Purchase orders data generation endpoint coming soon",
-        "version": "0.1.0"
-    }
-
-@router.get("/generated-data-history")
-@login_required
-def get_generated_data_history(request: Request, response: Response, db: Session = Depends(get_db)):
-    """Get history of generated data"""
-    return {
-        "message": "Generated data history endpoint coming soon",
-        "version": "0.1.0"
-    }
+    return FileResponse(
+        path=str(output_zip),
+        media_type="application/zip",
+        filename=f"{order_data.client_id}_orders.zip",
+    )

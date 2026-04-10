@@ -175,20 +175,31 @@ const API = {
         return data;
     },
 
-    async generateSalesOrder(payload) {
-        const response = await fetch(`${this.BASE_URL}/sales_orders/generate`, {
+    async generateOrders(payload) {
+        const response = await fetch(`${this.BASE_URL}/data/generate`, {
             method: 'POST',
             credentials: 'include',
             headers: this.getAuthHeaders(),
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            throw new Error(data.detail || 'Failed to generate sales order');
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.detail || 'Failed to generate orders');
         }
 
-        return data;
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const fileNameMatch = contentDisposition && contentDisposition.match(/filename="?([^"]+)"?/);
+        const fileName = fileNameMatch ? fileNameMatch[1] : 'orders.zip';
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
     }
 };

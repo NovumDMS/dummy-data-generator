@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 @login_required
 async def generate(order_data: SalesOrderCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Generate sales and purchase orders and return them as a downloadable zip"""
-    generate_sales_orders(order_data, db)
+    sales_order_items = generate_sales_orders(order_data, db)
 
     po_data = PurchaseOrderCreate(
         client_id=order_data.client_id,
@@ -31,6 +31,7 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
         company_id=order_data.company_id,
         ship_to_id=order_data.ship_to_id,
         location_id=order_data.location_id,
+        item_data={"items": sales_order_items},
     )
     generate_purchase_orders(po_data, db)
 

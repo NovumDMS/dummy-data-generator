@@ -18,7 +18,7 @@ from app.schemas import SalesOrderCreate
 logger = logging.getLogger(__name__)
 
 
-def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> None:
+def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> list[dict]:
     """Generate sales order header and line TSV files for the given parameters."""
     client_id = order_data.client_id
     customer_id = order_data.customer_id
@@ -33,6 +33,8 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> None:
         if order_data.sales_order_count == 0
         else order_data.sales_order_count
     )
+
+    all_items: list[dict] = []
 
     for i in range(sales_order_count):
         number_of_items = random.randint(lower_item_count, upper_item_count)
@@ -79,8 +81,10 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> None:
             })
             line_no += 1
             items_list.append(line_data)
+            all_items.append(line_data)
 
         generate_tsv_file([header_data], db, "SOH")
         generate_tsv_file(items_list, db, "SOL")
 
     logger.info("Generated %d sales order(s) for client %s", sales_order_count, client_id)
+    return all_items

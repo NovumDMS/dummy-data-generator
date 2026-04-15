@@ -25,6 +25,10 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
 
     # Resolve project root (two levels up: app/routes -> app -> project root)
     project_root = Path(__file__).resolve().parents[2]
+    if not project_root.exists():
+        logger.error(f"Project root directory not found at {project_root}. Cannot generate TSV file.")
+        raise FileNotFoundError(f"Project root directory not found at {project_root}")
+
     tsv_dir = project_root / "tsv_files"
     if file_prefix == "SOH" or file_prefix == "SOL":
         tsv_dir = tsv_dir / "sales_orders"
@@ -55,6 +59,7 @@ def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
             z.write(file, arcname=f"Purchase Orders/{file.name}")
             files_to_delete.append(file)
 
+    logger.info(f"Created zip file at {output_zip} containing {len(files_to_delete)} TSV files. Deleting files from disk now.")
     for file in files_to_delete:
         file.unlink()
 

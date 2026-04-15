@@ -13,12 +13,13 @@ from app.helper.sales_order_helper import (
     LINE_DEFAULT_STRUCTURE,
 )
 from app.helper.file_helper import generate_tsv_file
+from app.models.logging import GenerationLogs
 from app.schemas import SalesOrderCreate
 
 logger = logging.getLogger(__name__)
 
 
-def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> list[dict]:
+def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: str, username: str) -> list[dict]:
     """Generate sales order header and line TSV files for the given parameters."""
     logger.info(f"Generating sales orders for client_id={order_data.client_id}, customer_id={order_data.customer_id}")
 
@@ -37,9 +38,11 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> list[dic
     )
 
     all_items: list[dict] = []
+    final_generated_ids: list[str] = []
 
     logger.info(f"Generating {sales_order_count} sales order(s) with item counts between {lower_item_count} and {upper_item_count}")
-    
+    successful_count = 0
+    failed_count = 0
     location_id = get_client_main_location(client_id, db)
     for i in range(sales_order_count):
         try:
@@ -54,8 +57,6 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> list[dic
             contact_id = items[0]["contact_id"] if items else None
             contact_name = items[0]["contact_name"] if items else None
             ship_to_name = get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
-
-            logger.info(f"Collected all necessary data for generating Sales Orders without errors")
 
             header_data = HDR_DEFAULT_STRUCTURE.copy()
             header_data.update({
@@ -91,10 +92,13 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session) -> list[dic
                 all_items.append(line_data)
 
             generate_tsv_file([header_data], db, "SOH")
+            final_generated_ids.append("SOH_" + str(import_set_no))
             generate_tsv_file(items_list, db, "SOL")
+            final_generated_ids.append("SOL_" + str(import_set_no))
+            successful_count += 1
         except Exception as e:
             logger.error(f"Error generating sales order line {i + 1}: {e}", exc_info=True)
+            failed_count += 1
             continue
-
-    logger.info("Generated %d sales order(s) for client %s", sales_order_count, client_id)
+    GenerationLogs.log_so_generation(db, client_id, user_id, True, successful_count=successful_count, failed_count=failed_count, successful_generated_ids=final_generated_ids)
     return all_items

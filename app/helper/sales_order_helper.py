@@ -44,13 +44,14 @@ def get_random_items(client_id: str, number_of_items: int, db: Session = Depends
         import random
         items_list.append(random.choice(items))
 
+    logger.info(f"Generated {len(items_list)} random items for sales order.")
     return items_list
 
 def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)):
     """Fetch ship_to_name based on ship_to_id"""
     with get_client_db_connection(client_id, db) as conn:
         ship_to_name = conn.execute(sa.text("SELECT DISTINCT H.ship2_name FROM p21s_oe_hdr H JOIN p21s_ship_to S ON S.customer_id = H.customer_id WHERE S.ship_to_id = :ship_to_id"), {"ship_to_id": ship_to_id}).scalar()
-    return ship_to_name
+    return ship_to_name if ship_to_name else "Unknown Ship To Name"
 
 HDR_DEFAULT_STRUCTURE = {
     "import_set_no": "",

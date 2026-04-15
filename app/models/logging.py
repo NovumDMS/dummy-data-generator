@@ -22,7 +22,7 @@ class GenerationLogs(Base):
     generation_date = Column(DateTime)
 
     @staticmethod
-    def log_so_generation(db, client_id: str, user_id: str, success_flag: bool):
+    def log_so_generation(db, client_id: str, user_id: str, success_flag: bool, successful_count: int, failed_count: int, successful_generated_ids: list):
         """Log a new sales order generation event to the database"""
         new_log = GenerationLogs(
             id=gen_uuid(),
@@ -30,6 +30,10 @@ class GenerationLogs(Base):
             user_id=user_id,
             generated_file_type="SO",
             success_flag=success_flag,
+            total_records_generated=successful_count + failed_count,
+            successful_count=successful_count,
+            failed_count=failed_count,
+            successful_generated_ids=successful_generated_ids,
             generation_date=datetime.now(timezone.utc)
         )
         db.add(new_log)
@@ -57,7 +61,7 @@ class GenerationLogs(Base):
         return formatted_logs
     
     @staticmethod
-    def log_po_generation(db, client_id: str, user_id: str, success_flag: bool):
+    def log_po_generation(db, client_id: str, user_id: str, success_flag: bool, successful_count: int, failed_count: int, successful_generated_ids: list):
         """Log a new purchase order generation event to the database"""
         new_log = GenerationLogs(
             id=gen_uuid(),
@@ -65,6 +69,10 @@ class GenerationLogs(Base):
             user_id=user_id,
             generated_file_type="PO",
             success_flag=success_flag,
+            total_records_generated=successful_count + failed_count,
+            successful_count=successful_count,
+            failed_count=failed_count,
+            successful_generated_ids=successful_generated_ids,
             generation_date=datetime.now(timezone.utc)
         )
         db.add(new_log)

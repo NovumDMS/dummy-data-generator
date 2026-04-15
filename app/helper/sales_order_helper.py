@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 import app.scripts.data_queries as queries
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
     """Fetch the main location for the client"""
     with get_client_db_connection(client_id, db) as conn:
@@ -18,6 +22,7 @@ def get_random_taker(client_id: str, db: Session = Depends(get_db)):
         conn.close()
     if takers:
         import random
+        logger.info(f"Successfully fetched takers, grabbing random one for sales order header.")
         return random.choice(takers)[0]  # Return the taker value from the tuple
     return None
 

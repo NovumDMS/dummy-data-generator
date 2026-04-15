@@ -14,6 +14,7 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
     """
 
     if not data:
+        logger.info(f"No data provided for {file_prefix} TSV generation. Skipping file creation.")
         return
 
     first_row = data[0]

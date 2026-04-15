@@ -22,8 +22,10 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 @login_required
 async def generate(order_data: SalesOrderCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Generate sales and purchase orders and return them as a downloadable zip"""
+    logger.info(f"Beginning order generation for client_id={order_data.client_id}, customer_id={order_data.customer_id}")
     sales_order_items = generate_sales_orders(order_data, db)
 
+    logger.info(f"Sales order generated with {len(sales_order_items)} items. Building purchase order payload.")
     po_data = PurchaseOrderCreate(
         client_id=order_data.client_id,
         customer_id=order_data.customer_id,
@@ -35,11 +37,13 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     )
     generate_purchase_orders(po_data, db)
 
+    logger.info("Purchase order generation complete. Preparing zip file for download.")
     project_root = Path(__file__).resolve().parents[2]
     tsv_dir = project_root / "tsv_files"
     output_zip = tsv_dir / f"{order_data.client_id}_orders.zip"
     zip_orders(tsv_dir, output_zip)
 
+    logger.info(f"Zip file created at {output_zip}. Outputting via FileResponse.")
     return FileResponse(
         path=str(output_zip),
         media_type="application/zip",

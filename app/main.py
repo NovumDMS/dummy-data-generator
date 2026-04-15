@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 from app.database import Base, engine
-from app.routes import auth, data, client
+from app.routes import auth, data, client, sales_order
 from app.templating import templates 
 
 from app.security.access import login_required, _redirect_to_login
@@ -73,7 +73,7 @@ if static_path.exists():
 app.include_router(auth.router)
 app.include_router(data.router)
 app.include_router(client.router)
-
+app.include_router(sales_order.router)
 
 @app.get("/")
 async def root():

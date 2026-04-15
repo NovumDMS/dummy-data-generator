@@ -21,36 +21,45 @@
             </select>
         </div>
         <div class="selector-container">
-            <label for="clientItems">Items:</label>
-            <select name="items" id="clientItems" class="client-data-select">
-                <option value="">Select an item...</option>
-                <!-- Options will be populated dynamically -->
-            </select>
+            <label for="lowerItemCount">Min items per order:</label>
+            <input type="number" id="lowerItemCount" class="client-data-select" min="1" step="1" value="1" />
         </div>
         <div class="selector-container">
-            <label for="clientSuppliers">Suppliers:</label>
-            <select name="suppliers" id="clientSuppliers" class="client-data-select">
-                <option value="">Select a supplier...</option>
-                <!-- Options will be populated dynamically -->
-            </select>
+            <label for="upperItemCount">Max items per order:</label>
+            <input type="number" id="upperItemCount" class="client-data-select" min="1" step="1" value="25" />
         </div>
         <div class="selector-container">
-            <label for="clientBuyers">Buyers:</label>
-            <select name="buyers" id="clientBuyers" class="client-data-select">
-                <option value="">Select a buyer...</option>
-                <!-- Options will be populated dynamically -->
-            </select>
+            <label for="salesOrderCount">Number of sales orders:</label>
+            <input type="number" id="salesOrderCount" class="client-data-select" min="0" step="1" value="5" />
+            <label style="margin-top:4px;">
+                <input type="checkbox" id="randomSoCount" /> Random (1–10)
+            </label>
         </div>
     </div>
 
     <div class="generation-btn-container">
-        <button id="generateSOButton" class="btn btn-primary">Generate Sales Orders</button>
-        <button id="generatePOButton" class="btn btn-primary">Generate Purchase Orders</button>
+        <button id="generateButton" class="btn btn-primary">Generate</button>
     </div>
+
+    <p id="generationStatus"></p>
 </div>
 
 <script>
     const clientSelect = document.getElementById('clientSelect');
+    const customerSelect = document.getElementById('clientCustomers');
+    const lowerItemCountInput = document.getElementById('lowerItemCount');
+    const upperItemCountInput = document.getElementById('upperItemCount');
+    const salesOrderCountInput = document.getElementById('salesOrderCount');
+    const randomSoCountCheckbox = document.getElementById('randomSoCount');
+    const generateButton = document.getElementById('generateButton');
+    const generationStatus = document.getElementById('generationStatus');
+
+    let customerLookup = new Map();
+    let clientLookup = new Map();
+
+    randomSoCountCheckbox.addEventListener('change', () => {
+        salesOrderCountInput.disabled = randomSoCountCheckbox.checked;
+    });
 
     document.addEventListener("DOMContentLoaded", async () => {
         try {
@@ -60,128 +69,106 @@
                 option.value = client.id;
                 option.textContent = `${client.client_name} (ID: ${client.client_id})`;
                 clientSelect.appendChild(option);
+                clientLookup.set(client.id, client);
             });
         } catch (error) {
             console.error('Error fetching clients:', error);
         }
     });
 
-    const itemSelect = document.getElementById("clientItems");
-    const supplierSelect = document.getElementById("clientSuppliers");
-    const buyerSelect = document.getElementById("clientBuyers");
-
-    let allClientData = [];
-
-    const filters = {
-        itemId: null,
-        supplierId: null,
-        buyerId: null
-    };
-
-    function getFilteredRows() {
-        return allClientData.filter(row => {
-            return (!filters.itemId || String(row.inv_mast_uid) === String(filters.itemId)) &&
-                (!filters.supplierId || String(row.supplier_id) === String(filters.supplierId)) &&
-                (!filters.buyerId || String(row.buyer_id) === String(filters.buyerId));
-        });
+    function setStatus(message, isError = false) {
+        generationStatus.textContent = message;
+        generationStatus.style.color = isError ? '#b42318' : '#1f4e79';
     }
 
-    function buildUniqueOptions(rows, idKey, nameKey) {
-        const map = new Map();
+    async function generateOrders() {
+        const clientId = clientSelect.value;
+        const selectedCustomerKey = customerSelect.value;
+        const selectedCustomer = customerLookup.get(selectedCustomerKey);
+        const lowerItemCount = Number.parseInt(lowerItemCountInput.value, 10);
+        const upperItemCount = Number.parseInt(upperItemCountInput.value, 10);
+        const salesOrderCount = randomSoCountCheckbox.checked
+            ? 0
+            : Number.parseInt(salesOrderCountInput.value, 10);
 
-        rows.forEach(row => {
-            const id = row[idKey];
-            const name = row[nameKey];
+        if (!clientId) {
+            setStatus('Please select a client.', true);
+            return;
+        }
 
-            if (id !== null && id !== undefined && id !== "") {
-                map.set(String(id), {
-                    id: String(id),
-                    name: name
-                });
-            }
-        });
+        if (!selectedCustomer) {
+            setStatus('Please select a customer.', true);
+            return;
+        }
 
-        return Array.from(map.values());
-    }
+        if (!Number.isInteger(lowerItemCount) || lowerItemCount < 1) {
+            setStatus('Min items per order must be at least 1.', true);
+            return;
+        }
 
-    function populateSelect(selectEl, options, placeholder, selectedValue) {
-        selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+        if (!Number.isInteger(upperItemCount) || upperItemCount < lowerItemCount) {
+            setStatus('Max items per order must be greater than or equal to min items.', true);
+            return;
+        }
 
-        options.forEach(optionData => {
-            const option = document.createElement("option");
-            option.value = optionData.id;
-            option.textContent = optionData.name;
-            selectEl.appendChild(option);
-        });
+        if (!randomSoCountCheckbox.checked && (!Number.isInteger(salesOrderCount) || salesOrderCount < 1)) {
+            setStatus('Number of sales orders must be at least 1.', true);
+            return;
+        }
 
-        const isValidSelection = options.some(option => option.id === String(selectedValue));
-        selectEl.value = isValidSelection ? String(selectedValue) : "";
-        return isValidSelection ? String(selectedValue) : null;
-    }
+        const payload = {
+            client_id: clientId,
+            customer_id: String(selectedCustomer.customer_id),
+            customer_name: String(selectedCustomer.customer_name),
+            company_id: String(clientLookup.get(clientId).client_id),
+            lower_item_count: lowerItemCount,
+            upper_item_count: upperItemCount,
+            sales_order_count: salesOrderCount,
+            ship_to_id: selectedCustomer.ship_to_id ? String(selectedCustomer.ship_to_id) : null
+        };
 
-    function updateSelectOptions(rows) {
-        const supplierOptions = buildUniqueOptions(rows, "supplier_id", "supplier_name");
-        const buyerOptions = buildUniqueOptions(rows, "buyer_id", "buyer_name");
-        const itemOptions = buildUniqueOptions(rows, "inv_mast_uid", "item_desc");
-
-        filters.itemId = populateSelect(itemSelect, itemOptions, "Select an item...", filters.itemId);
-        filters.supplierId = populateSelect(supplierSelect, supplierOptions, "Select a supplier...", filters.supplierId);
-        filters.buyerId = populateSelect(buyerSelect, buyerOptions, "Select a buyer...", filters.buyerId);
-    }
-
-    function refreshSelectors() {
-        const filteredRows = getFilteredRows();
-        updateSelectOptions(filteredRows);
+        try {
+            generateButton.disabled = true;
+            setStatus('Generating orders...');
+            await API.generateOrders(payload);
+            setStatus('Orders generated successfully. Download started.');
+        } catch (error) {
+            setStatus(`Failed to generate orders: ${error.message}`, true);
+        } finally {
+            generateButton.disabled = false;
+        }
     }
 
     clientSelect.addEventListener("change", async (event) => {
         const clientId = event.target.value;
-        const customerSelect = document.getElementById("clientCustomers");
 
         if (clientId) {
             try {
                 const customerData = await API.getClientCustomers(clientId);
-                allClientData = await API.getClientData(clientId);
-
-                filters.itemId = null;
-                filters.supplierId = null;
-                filters.buyerId = null;
+                customerLookup = new Map();
 
                 customerSelect.innerHTML = `<option value="">Select a customer...</option>`;
                 customerData.forEach(customer => {
                     const option = document.createElement("option");
-                    option.value = customer.ship_to_id;
+                    const customerKey = String(customer.ship_to_id ?? customer.customer_id);
+                    option.value = customerKey;
                     option.textContent = `${customer.customer_name} (ID: ${customer.ship_to_id})`;
                     customerSelect.appendChild(option);
+                    customerLookup.set(customerKey, customer);
                 });
-
-                refreshSelectors();
+                setStatus('');
             } catch (error) {
                 console.log("Error found when adding data", error);
+                setStatus('Failed to load customer data for this client.', true);
             }
         } else {
-            allClientData = [];
-            filters.itemId = null;
-            filters.supplierId = null;
-            filters.buyerId = null;
+            customerLookup = new Map();
             customerSelect.value = "";
-            refreshSelectors();
+            customerSelect.innerHTML = `<option value="">Select a customer...</option>`;
+            setStatus('');
         }
     });
 
-    itemSelect.addEventListener("change", (event) => {
-        filters.itemId = event.target.value || null;
-        refreshSelectors();
-    });
-
-    supplierSelect.addEventListener("change", (event) => {
-        filters.supplierId = event.target.value || null;
-        refreshSelectors();
-    });
-
-    buyerSelect.addEventListener("change", (event) => {
-        filters.buyerId = event.target.value || null;
-        refreshSelectors();
-    });
+    generateButton.addEventListener('click', generateOrders);
 </script>
 {% endblock %}

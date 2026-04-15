@@ -36,3 +36,27 @@ class LoginRequest(BaseModel):
     """Login request schema"""
     username: str
     password: str
+
+class OrderData(BaseModel):
+    """Base order data schema"""
+    client_id: str
+    customer_id: str
+    customer_name: str
+    company_id: str
+    ship_to_id: Optional[str] = None
+    location_id: Optional[str] = None
+
+
+class SalesOrderCreate(OrderData):
+    """Sales order header creation schema"""
+    # Define fields for sales order header creation as needed
+    sales_order_count: int = 5
+    lower_item_count: int = 1
+    upper_item_count: int = 25
+
+
+class PurchaseOrderCreate(OrderData):
+    """Purchase order header creation schema"""
+    item_data: Optional[dict] = None
+    buyer_id: Optional[str] = None
+    purchase_order_type: Optional[str] = None

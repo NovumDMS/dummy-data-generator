@@ -7,7 +7,8 @@ def client_customer_query() -> sa.text:
             JOIN p21s_ship_to S ON S.customer_id = C.customer_id
         WHERE C.credit_limit > 5000
             AND C.credit_status NOT IN ('HOLD', 'CC', 'COD')
-            AND C.delete_flag = 'N';
+                AND C.delete_flag = 'N'
+        ORDER BY C.customer_name;
     """)
 
 def client_data_query() -> sa.text:
@@ -27,7 +28,12 @@ def client_data_query() -> sa.text:
             COALESCE(C.id, DB.id) AS buyer_id, 
             COALESCE(C.contact_name, DB.contact_name) AS buyer_name, 
             M.inv_mast_uid, 
-            M.item_desc
+            M.item_id,
+            M.item_desc,
+            L.qty_on_hand - L.qty_allocated - L.qty_backordered AS qty_available,
+            M.base_unit,
+            C.id AS contact_id,
+            C.contact_name
         FROM p21s_inv_mast M
         JOIN p21s_inv_loc L 
             ON M.inv_mast_uid = L.inv_mast_uid
@@ -47,5 +53,7 @@ def client_data_query() -> sa.text:
         AND L.buy = 'Y'
         AND L.qty_on_hand > 0
         AND L.delete_flag = 'N'
-        AND S.delete_flag = 'N';
-    """)
+        AND S.delete_flag = 'N'
+        AND L.qty_on_hand - L.qty_allocated - L.qty_backordered > 0;
+    """
+    )

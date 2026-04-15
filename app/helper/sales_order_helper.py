@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 import app.scripts.data_queries as queries
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
     """Fetch the main location for the client"""
     with get_client_db_connection(client_id, db) as conn:
@@ -18,6 +22,7 @@ def get_random_taker(client_id: str, db: Session = Depends(get_db)):
         conn.close()
     if takers:
         import random
+        logger.info(f"Successfully fetched takers, grabbing random one for sales order header.")
         return random.choice(takers)[0]  # Return the taker value from the tuple
     return None
 
@@ -39,13 +44,14 @@ def get_random_items(client_id: str, number_of_items: int, db: Session = Depends
         import random
         items_list.append(random.choice(items))
 
+    logger.info(f"Generated {len(items_list)} random items for sales order.")
     return items_list
 
 def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)):
     """Fetch ship_to_name based on ship_to_id"""
     with get_client_db_connection(client_id, db) as conn:
         ship_to_name = conn.execute(sa.text("SELECT DISTINCT H.ship2_name FROM p21s_oe_hdr H JOIN p21s_ship_to S ON S.customer_id = H.customer_id WHERE S.ship_to_id = :ship_to_id"), {"ship_to_id": ship_to_id}).scalar()
-    return ship_to_name
+    return ship_to_name if ship_to_name else "Unknown Ship To Name"
 
 HDR_DEFAULT_STRUCTURE = {
     "import_set_no": "",

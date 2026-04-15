@@ -55,6 +55,7 @@
     const generationStatus = document.getElementById('generationStatus');
 
     let customerLookup = new Map();
+    let clientLookup = new Map();
 
     randomSoCountCheckbox.addEventListener('change', () => {
         salesOrderCountInput.disabled = randomSoCountCheckbox.checked;
@@ -68,6 +69,7 @@
                 option.value = client.id;
                 option.textContent = `${client.client_name} (ID: ${client.client_id})`;
                 clientSelect.appendChild(option);
+                clientLookup.set(client.id, client);
             });
         } catch (error) {
             console.error('Error fetching clients:', error);
@@ -118,7 +120,7 @@
             client_id: clientId,
             customer_id: String(selectedCustomer.customer_id),
             customer_name: String(selectedCustomer.customer_name),
-            company_id: String(selectedCustomer.company_id),
+            company_id: String(clientLookup.get(clientId).client_id),
             lower_item_count: lowerItemCount,
             upper_item_count: upperItemCount,
             sales_order_count: salesOrderCount,

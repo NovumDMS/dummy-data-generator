@@ -13,7 +13,7 @@ def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
     """Fetch the main location for the client"""
     with get_client_db_connection(client_id, db) as conn:
         location_id = conn.execute(sa.text("SELECT location_id FROM p21s_location LIMIT 1")).scalar()
-    return location_id
+    return int(location_id)
 
 def get_random_taker(client_id: str, db: Session = Depends(get_db)):
     """Fetch a random taker from the oe_hdr table"""

@@ -79,17 +79,20 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
             items_list = []
             for item in items:
                 line_data = LINE_DEFAULT_STRUCTURE.copy()
+                used_quantity = random.randint(1, int(item["qty_available"]))
                 line_data.update({
                     "import_set_no": import_set_no,
                     "line_no": line_no,
                     "item_id": item["item_id"],
-                    "unit_quantity": random.randint(1, int(item["qty_available"])),
+                    "unit_quantity": used_quantity,
                     "unit_of_measure": item["base_unit"],
                     "capture_usage": "Y",
                 })
                 line_no += 1
                 items_list.append(line_data)
-                all_items.append(line_data)
+                item = dict(item)  # Convert from RowMapping to dict to update
+                item["used_quantity"] = used_quantity
+                all_items.append(item)
 
             generate_tsv_file([header_data], db, "SOH")
             final_generated_ids.append("SOH_" + str(import_set_no))

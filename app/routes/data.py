@@ -26,11 +26,11 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 @login_required
 async def generate(order_data: SalesOrderCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Generate sales and purchase orders and return them as a downloadable zip"""
+    user_id = request.state.user.id
+
     logger.info(f"Beginning order generation for client_id={order_data.client_id}, customer_id={order_data.customer_id}")
     client_name = db.query(Clients).filter(Clients.id == order_data.client_id).first().client_name  # Validate client exists
-    sales_order_items = generate_sales_orders(order_data, db, user_id=request.state.user.id, username=request.state.user.username)
-
-    logger.info(f"Sales order generated with {len(sales_order_items)} items. Building purchase order payload.")
+    sales_order_items = generate_sales_orders(order_data, db, user_id=user_id, username=request.state.user.username)
 
     po_data = PurchaseOrderCreate(
         client_id=order_data.client_id,
@@ -38,7 +38,7 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
         location_id=get_client_main_location(order_data.client_id, db),
         items=sales_order_items,
     )
-    generate_purchase_orders(po_data, db)
+    generate_purchase_orders(po_data, user_id=user_id, db=db)
 
     logger.info("Purchase order generation complete. Preparing zip file for download.")
     project_root = Path(__file__).resolve().parents[2]

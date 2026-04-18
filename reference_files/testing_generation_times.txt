@@ -1,0 +1,8 @@
+This is simply to test the length of time to see what should happen with batching...
+
+IFS 50-100 items 100 SO - 3min
+IFS 25-50 items 100 SO - 3min
+IFS 25-50 items 50 SO - 1 min 32 s
+
+The time seems directly coordinated to the number of TSV files that need to be generated taking about 1.8 seconds per 
+sales order to be generated. 

@@ -9,10 +9,10 @@ from app.helper.file_helper import generate_tsv_file
 logger = logging.getLogger(__name__)
 
 
-def generate_purchase_orders(order_data: PurchaseOrderCreate, db: Session) -> None:
+def generate_purchase_orders(order_data: PurchaseOrderCreate, user_id: str, db: Session) -> None:
     """Generate purchase order header and line TSV files grouped by supplier."""
 
-    purchase_orders = build_purchase_order_payload(order_data, db)
+    purchase_orders = build_purchase_order_payload(order_data, user_id, db)
 
     for po in purchase_orders:
         generate_tsv_file([po["header"]], db, "POH")

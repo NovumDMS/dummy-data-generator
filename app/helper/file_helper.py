@@ -45,8 +45,6 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
         for row in data:
             writer.writerow([row.get(col, "") for col in columns])
 
-    logger.info(f"Generated TSV file at {file_path}")
-
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     files_to_delete = []
 

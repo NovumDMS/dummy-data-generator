@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import logging
 logger = logging.getLogger(__name__)
 
-def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
+def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     """Generate a tab-delimited TSV file under `tsv_files`.
 
     The file name will be `<file_prefix>_<import_set_no>.tsv`, e.g.
@@ -30,9 +30,9 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
         raise FileNotFoundError(f"Project root directory not found at {project_root}")
 
     tsv_dir = project_root / "tsv_files"
-    if file_prefix == "SOH" or file_prefix == "SOL":
+    if file_prefix == "SOHPLAY" or file_prefix == "SOLPLAY":
         tsv_dir = tsv_dir / "sales_orders"
-    elif file_prefix == "POH" or file_prefix == "POL":
+    elif file_prefix == "POHPLAY" or file_prefix == "POLPLAY":
         tsv_dir = tsv_dir / "purchase_orders"
     tsv_dir.mkdir(parents=True, exist_ok=True)
 

@@ -43,6 +43,7 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
     location_id = get_client_main_location(client_id, db)
     takers = get_takers(client_id, db)
     available_items = get_items(client_id, db)
+    ship_to_name = get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
     for i in range(sales_order_count):
         try:
             number_of_items = random.randint(lower_item_count, upper_item_count)
@@ -55,8 +56,7 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
 
             contact_id = items[0]["contact_id"] if items else None
             contact_name = items[0]["contact_name"] if items else None
-            ship_to_name = get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
-
+            
             header_data = HDR_DEFAULT_STRUCTURE.copy()
             header_data.update({
                 "import_set_no": import_set_no,
@@ -71,7 +71,7 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
                 "ship_to_name": ship_to_name,
                 "packing_basis": "partial",
                 "quote": "N",
-                "customer_po_no": f"PO{order_no}",
+                "customer_po_no": f"{order_no}",
             })
 
             line_no = 1
@@ -95,8 +95,8 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
                 final_generated_ids.append(f"SOH_{import_set_no}_{line_data['item_id']}")
                 final_generated_ids.append(f"SOL_{import_set_no}_{line_data['item_id']}")
 
-            generate_tsv_file([header_data], db, "SOH")
-            generate_tsv_file(items_list, db, "SOL")
+            generate_tsv_file([header_data], "SOHPLAY")
+            generate_tsv_file(items_list, "SOLPLAY")
             
             successful_count += 1
         except Exception as e:

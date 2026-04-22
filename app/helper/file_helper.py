@@ -36,7 +36,7 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
         tsv_dir = tsv_dir / "purchase_orders"
     tsv_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"{file_prefix}_{import_set_no}.tsv"
+    file_name = f"{file_prefix}_{import_set_no}.txt"
     file_path = tsv_dir / file_name
 
     # Write TSV with tab delimiter
@@ -49,11 +49,11 @@ def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     files_to_delete = []
 
     with zipfile.ZipFile(output_zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
-        for file in (tsv_dir / "sales_orders").glob("*.tsv"):
+        for file in (tsv_dir / "sales_orders").glob("*.txt"):
             z.write(file, arcname=f"Sales Orders/{file.name}")
             files_to_delete.append(file)
 
-        for file in (tsv_dir / "purchase_orders").glob("*.tsv"):
+        for file in (tsv_dir / "purchase_orders").glob("*.txt"):
             z.write(file, arcname=f"Purchase Orders/{file.name}")
             files_to_delete.append(file)
 

@@ -43,7 +43,6 @@ class OrderData(BaseModel):
     customer_id: str
     customer_name: str
     company_id: str
-    ship_to_id: Optional[str] = None
     location_id: Optional[str] = None
 
 

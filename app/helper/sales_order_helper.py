@@ -15,6 +15,15 @@ def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
         location_id = conn.execute(sa.text("SELECT location_id FROM p21s_location LIMIT 1")).scalar()
     return int(location_id)
 
+def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(get_db)):
+    """Fetch customer-related data such as ship_to_id and contact information"""
+    with get_client_db_connection(client_id, db) as conn:
+        result = conn.execute(queries.customer_data_query(customer_id)).mappings().first()
+    if not result:
+        logger.warning(f"No customer data found for customer_id={customer_id} in client_id={client_id}. Returning None.")
+        return None
+    return result
+
 def get_takers(client_id: str, db: Session = Depends(get_db)):
     """Fetch all distinct takers from the oe_hdr table"""
     with get_client_db_connection(client_id, db) as conn:

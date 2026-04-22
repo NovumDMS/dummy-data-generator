@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.helper.sales_order_helper import (
     get_client_main_location,
+    get_customer_data,
     get_items,
     get_takers,
     generate_order_no,
@@ -25,7 +26,6 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
     customer_id = order_data.customer_id
     customer_name = order_data.customer_name
     company_id = order_data.company_id
-    ship_to_id = order_data.ship_to_id if order_data.ship_to_id else customer_id
     lower_item_count = order_data.lower_item_count
     upper_item_count = order_data.upper_item_count
 
@@ -40,9 +40,14 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
 
     successful_count = 0
     failed_count = 0
+
+    customer_data = get_customer_data(customer_id, client_id, db)
     location_id = get_client_main_location(client_id, db)
     takers = get_takers(client_id, db)
     available_items = get_items(client_id, db)
+    ship_to_id = customer_data["ship_to_id"] if customer_data else None
+    contact_id = customer_data["contact_id"] if customer_data else None
+    contact_name = customer_data["contact_name"] if customer_data else None
     ship_to_name = get_ship_to_name(ship_to_id, client_id, db) if ship_to_id else None
     for i in range(sales_order_count):
         try:
@@ -53,9 +58,6 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
             import_set_no = i + 1
 
             order_no = generate_order_no()
-
-            contact_id = items[0]["contact_id"] if items else None
-            contact_name = items[0]["contact_name"] if items else None
             
             header_data = HDR_DEFAULT_STRUCTURE.copy()
             header_data.update({

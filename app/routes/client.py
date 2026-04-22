@@ -84,12 +84,8 @@ def get_client_customers(client_id: str, request: Request, response: Response, d
     try:
         with get_client_db_connection(client_id, db) as connection:
             customers = [dict(row) for row in connection.execute(client_customer_query()).mappings().all()]
-            for customer in customers:
-                if (customer['ship_to_id'] is None) or (customer['ship_to_id'] == ''):
-                    customer['ship_to_id'] = customer['customer_id']
             connection.close()
             return customers 
-        
     except HTTPException as e:
         raise e
     except Exception as e:

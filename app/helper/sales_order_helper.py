@@ -13,39 +13,35 @@ def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
     """Fetch the main location for the client"""
     with get_client_db_connection(client_id, db) as conn:
         location_id = conn.execute(sa.text("SELECT location_id FROM p21s_location LIMIT 1")).scalar()
-    return location_id
+    return int(location_id)
 
-def get_random_taker(client_id: str, db: Session = Depends(get_db)):
-    """Fetch a random taker from the oe_hdr table"""
+def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(get_db)):
+    """Fetch customer-related data such as ship_to_id and contact information"""
+    with get_client_db_connection(client_id, db) as conn:
+        result = conn.execute(queries.customer_data_query(customer_id)).mappings().first()
+    if not result:
+        logger.warning(f"No customer data found for customer_id={customer_id} in client_id={client_id}. Returning None.")
+        return None
+    return result
+
+def get_takers(client_id: str, db: Session = Depends(get_db)):
+    """Fetch all distinct takers from the oe_hdr table"""
     with get_client_db_connection(client_id, db) as conn:
         takers = conn.execute(sa.text("SELECT DISTINCT taker FROM p21s_oe_hdr")).fetchall()
-        conn.close()
-    if takers:
-        import random
-        logger.info(f"Successfully fetched takers, grabbing random one for sales order header.")
-        return random.choice(takers)[0]  # Return the taker value from the tuple
-    return None
+    return [t[0] for t in takers] if takers else []
 
 def generate_order_no():
     """Generate a random order number"""
     import random
     return f"98{random.randint(10000, 99999)}"
 
-def get_random_items(client_id: str, number_of_items: int, db: Session = Depends(get_db)):
-    """Generate random items for the sales order"""
-    # This is a placeholder function. You can implement logic to fetch random items from the database or generate them as needed.
-    items_list = []
-
+def get_items(client_id: str, db: Session = Depends(get_db)):
+    """Fetch all available items for the client from the database"""
     with get_client_db_connection(client_id, db) as conn:
-        items = conn.execute(queries.client_data_query()).mappings().all()  # Fetch all items as dictionaries
-        conn.close()
-
-    for i in range(number_of_items):
-        import random
-        items_list.append(random.choice(items))
-
-    logger.info(f"Generated {len(items_list)} random items for sales order.")
-    return items_list
+        items = conn.execute(queries.client_data_query()).mappings().all()
+    if not items:
+        logger.warning(f"No items found for client_id={client_id}. Returning empty item list.")
+    return items
 
 def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)):
     """Fetch ship_to_name based on ship_to_id"""

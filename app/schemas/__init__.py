@@ -43,7 +43,6 @@ class OrderData(BaseModel):
     customer_id: str
     customer_name: str
     company_id: str
-    ship_to_id: Optional[str] = None
     location_id: Optional[str] = None
 
 
@@ -55,8 +54,10 @@ class SalesOrderCreate(OrderData):
     upper_item_count: int = 25
 
 
-class PurchaseOrderCreate(OrderData):
+class PurchaseOrderCreate(BaseModel):
     """Purchase order header creation schema"""
-    item_data: Optional[dict] = None
-    buyer_id: Optional[str] = None
+    client_id: str
+    company_id: str
+    location_id: int
+    items: list[dict]
     purchase_order_type: Optional[str] = None

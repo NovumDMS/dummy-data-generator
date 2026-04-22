@@ -123,13 +123,12 @@
             company_id: String(clientLookup.get(clientId).client_id),
             lower_item_count: lowerItemCount,
             upper_item_count: upperItemCount,
-            sales_order_count: salesOrderCount,
-            ship_to_id: selectedCustomer.ship_to_id ? String(selectedCustomer.ship_to_id) : null
+            sales_order_count: salesOrderCount
         };
 
         try {
             generateButton.disabled = true;
-            setStatus('Generating orders...');
+            setStatus(`Generating orders... (estimated time - ${Math.round(salesOrderCount / 10)} seconds)`);
             await API.generateOrders(payload);
             setStatus('Orders generated successfully. Download started.');
         } catch (error) {
@@ -150,9 +149,9 @@
                 customerSelect.innerHTML = `<option value="">Select a customer...</option>`;
                 customerData.forEach(customer => {
                     const option = document.createElement("option");
-                    const customerKey = String(customer.ship_to_id ?? customer.customer_id);
+                    const customerKey = String(customer.customer_id);
                     option.value = customerKey;
-                    option.textContent = `${customer.customer_name} (ID: ${customer.ship_to_id})`;
+                    option.textContent = `${customer.customer_name} (ID: ${customer.customer_id})`;
                     customerSelect.appendChild(option);
                     customerLookup.set(customerKey, customer);
                 });

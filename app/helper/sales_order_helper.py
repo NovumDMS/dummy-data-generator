@@ -9,14 +9,29 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_client_main_location(client_id: str, db: Session = Depends(get_db)):
-    """Fetch the main location for the client"""
+def get_client_main_location(client_id: str, db: Session = Depends(get_db)) -> int: 
+    """
+    Fetch the main location for the client.
+    The main location varies from client to client
+
+    :param client_id: ID of the client (Novum DB)
+    :param db: Database session
+    :return: ID of the main location for the client 
+    """
     with get_client_db_connection(client_id, db) as conn:
         location_id = conn.execute(sa.text("SELECT location_id FROM p21s_location LIMIT 1")).scalar()
     return int(location_id)
 
-def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(get_db)):
-    """Fetch customer-related data such as ship_to_id and contact information"""
+def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(get_db)) -> dict | None:
+    """
+    Fetch customer-related data such as ship_to_id and contact information
+    This is data like the ship_to information and contact information for a given customer.
+
+    :param customer_id: ID of the customer
+    :param client_id: ID of the client (Novum DB)
+    :param db: Database session
+    :return: Dictionary containing customer data or None if not found
+    """
     with get_client_db_connection(client_id, db) as conn:
         result = conn.execute(queries.customer_data_query(customer_id)).mappings().first()
     if not result:
@@ -24,27 +39,48 @@ def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(ge
         return None
     return result
 
-def get_takers(client_id: str, db: Session = Depends(get_db)):
-    """Fetch all distinct takers from the oe_hdr table"""
+def get_takers(client_id: str, db: Session = Depends(get_db)) -> list[str]:
+    """
+    Fetch all distinct takers from the oe_hdr table.
+    Return all takers so it can be randomized within a single order set.
+
+    :param client_id: ID of the client (Novum DB)
+    :param db: Database session
+    :return: List of distinct takers
+    """
     with get_client_db_connection(client_id, db) as conn:
         takers = conn.execute(sa.text("SELECT DISTINCT taker FROM p21s_oe_hdr")).fetchall()
     return [t[0] for t in takers] if takers else []
 
 def generate_order_no():
-    """Generate a random order number"""
+    """Generate a random order number starting with 98"""
     import random
     return f"98{random.randint(10000, 99999)}"
 
-def get_items(client_id: str, db: Session = Depends(get_db)):
-    """Fetch all available items for the client from the database"""
+def get_items(client_id: str, db: Session = Depends(get_db)) -> list[dict]:
+    """
+    Fetch all available items for the client from the database
+    This includes relevant information about the items and supplier associated for easier processing later
+    
+    :param client_id: ID of the client (Novum DB)
+    :param db: Database session
+    :return: List of dictionaries containing item data
+    """
     with get_client_db_connection(client_id, db) as conn:
         items = conn.execute(queries.client_data_query()).mappings().all()
     if not items:
         logger.warning(f"No items found for client_id={client_id}. Returning empty item list.")
     return items
 
-def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)):
-    """Fetch ship_to_name based on ship_to_id"""
+def get_ship_to_name(ship_to_id: str, client_id: str, db: Session = Depends(get_db)) -> str:
+    """
+    Fetch ship_to_name based on ship_to_id
+    
+    :param ship_to_id: ID of the ship_to location
+    :param client_id: ID of the client (Novum DB)
+    :param db: Database session
+    :return: Name of the ship_to location or "Unknown Ship To Name" if not found
+    """
     with get_client_db_connection(client_id, db) as conn:
         ship_to_name = conn.execute(sa.text("SELECT DISTINCT H.ship2_name FROM p21s_oe_hdr H JOIN p21s_ship_to S ON S.customer_id = H.customer_id WHERE S.ship_to_id = :ship_to_id"), {"ship_to_id": ship_to_id}).scalar()
     return ship_to_name if ship_to_name else "Unknown Ship To Name"

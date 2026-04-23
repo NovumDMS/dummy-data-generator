@@ -8,9 +8,15 @@ from app.helper.hash_helper import decrypt_db_url
 
 logger = logging.getLogger(__name__)
 
-
 def get_client_db_url(client_id: str, db: Session) -> str:
-    """Retrieve client database URL"""
+    """
+    Retrieve client database URL. This pulls from the NovumDMS table not any client table.
+    Requires the URL to be decrypted.
+
+    :param client_id: The ID of the client to retrieve the database URL for
+    :param db: The SQLAlchemy database session. Must come from a routed method.
+    :return: The decrypted database URL for the specified client
+    """
     client = db.query(Clients).filter(Clients.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -19,13 +25,27 @@ def get_client_db_url(client_id: str, db: Session) -> str:
 
 
 def confirm_dev_url(client_db_url: str) -> bool:
-    """Confirm that the provided database URL is a development/test URL"""
+    """
+    Confirm that the provided database URL is a development/test URL
+    :param client_db_url: The database URL to check
+    :return: True if the URL is a development/test URL, False otherwise
+    """
     allowed_keywords = ("play", "dev", "development", "etl")
     return any(keyword in client_db_url.lower() for keyword in allowed_keywords)
 
 
 def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Connection:
-    """Connect to the client's database and return the connection URL"""
+    """
+    Connect to the client's database and return the connection URL
+    This should be used as a context manager in a `with` statement to ensure proper cleanup, e.g.:
+    with get_client_db_connection(client_id, db) as connection:
+        # Use the connection here
+        result = connection.execute("SELECT * FROM some_table")
+        ...
+    :param client_id: The ID of the client to connect to
+    :param db: The SQLAlchemy database session. Must come from a routed method.
+    :return: The SQLAlchemy connection to the client's database
+    """
     # Get client name for logging purposes
     client = db.query(Clients).filter(Clients.id == client_id).first()
     if not client:

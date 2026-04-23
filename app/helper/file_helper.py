@@ -7,7 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
-    """Append all rows from source files into a single master file."""
+    """
+    Append all rows from source files into a single master file.
+    This requires all information to be written to files already.
+    :param source_files: List of source file paths to append
+    :param master_file: Path to the master file
+    :return: Number of rows written to the master file
+    """
     rows_written = 0
     with master_file.open("w", encoding="utf-8", newline="") as out_f:
         for file_path in source_files:
@@ -18,10 +24,13 @@ def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
     return rows_written
 
 def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
-    """Generate a tab-delimited TSV file under `tsv_files`.
+    """
+    Generate a tab-delimited TSV file under `tsv_files`.
 
     The file name will be `<file_prefix>_<import_set_no>.tsv`, e.g.
     `SOH_123.tsv` for header rows or `SOL_123.tsv` for line rows.
+    :param data: List of dictionaries containing the data to write
+    :param file_prefix: Prefix for the TSV file name (e.g. "SOHPLAY", "SOLPLAY", "POHPLAY", "POLPLAY")
     """
 
     if not data:
@@ -58,7 +67,11 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
 
 
 def generate_master_order_files(tsv_dir: Path) -> None:
-    """Create _0 master files by concatenating generated order txt files per prefix."""
+    """
+    Create _0 master files by concatenating generated order txt files per prefix.
+    This allows for single imports instead of bulk file imports in P21.
+    :param tsv_dir: Path to the directory containing TSV files
+    """
     folder_and_prefixes = {
         tsv_dir / "sales_orders": ["SOHPLAY", "SOLPLAY"],
         tsv_dir / "purchase_orders": ["POHPLAY", "POLPLAY"],
@@ -88,6 +101,15 @@ def generate_master_order_files(tsv_dir: Path) -> None:
             )
 
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
+    """
+    This function zips all generated order TSV files into a single zip file for download, then deletes the original TSV files.
+    The zip file path must be returned so it can be sent via API response.
+    This will be overwritten each generation, but that's acceptable since it's only used for immediate download and not stored long-term.
+
+    :param tsv_dir: Path to the directory containing TSV files
+    :param output_zip: Path to the output zip file
+    :return: Path to the created zip file
+    """
     files_to_delete = []
 
     with zipfile.ZipFile(output_zip, "w", compression=zipfile.ZIP_DEFLATED) as z:

@@ -1,5 +1,11 @@
 def get_ip_from_request(request) -> str:
-    """Extract client IP address from request"""
+    """
+    Extract client IP address from request.
+    This is required for logging client IPs in the application, which can be useful for debugging, analytics, or security purposes.
+    
+    :param request: FastAPI Request object
+    :return: Client IP address as string, or None if it cannot be determined
+    """
     if request:
         forwarded = request.headers.get("x-forwarded-for")
 

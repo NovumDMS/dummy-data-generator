@@ -11,8 +11,8 @@ from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
 
-def generate_po_no():
-    """Generate a random purchase order number"""
+def generate_po_no() -> str:
+    """Generate a random purchase order number beginning with 99"""
     import random
     return f"99{random.randint(10000, 99999)}"
 
@@ -23,6 +23,11 @@ def build_purchase_order_payload(order_data: PurchaseOrderCreate, user_id: str, 
     Returns a list of dictionaries where each entry contains a `header` object
     (matching PURCHASE_ORDER_HDR shape) and an `organized_items` list containing
     PURCHASE_ORDER_LINE objects for the supplier.
+
+    :param order_data: PurchaseOrderCreate object containing the input data for PO generation
+    :param user_id: ID of the user generating the purchase orders, for logging purposes
+    :param db: Database session for logging generation results
+    :return: List of dictionaries with `header` and `lines` for each supplier
     """
     supplier_data = format_items(order_data.items)
     successful_count = 0
@@ -82,7 +87,13 @@ def build_purchase_order_payload(order_data: PurchaseOrderCreate, user_id: str, 
 
     return purchase_orders
 
-def format_items(items: list[dict]) -> list[dict]:
+def format_items(items: list[dict]) -> dict:
+    """
+    Format input items into supplier-grouped structure for purchase order generation.
+    
+    :param items: List of item dictionaries containing purchase order data
+    :return: Dictionary with suppliers as keys and their corresponding items as values
+    """
     suppliers_map = {}
 
     for row in items:

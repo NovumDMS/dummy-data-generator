@@ -1,6 +1,11 @@
 import sqlalchemy as sa
 
 def client_customer_query() -> sa.text:
+    """
+    Query to retrieve customers with a credit limit greater than 5000 and not on hold, CC, or COD.
+
+    :return: SQL query to retrieve eligible customers
+    """
     return sa.text(f"""
         SELECT C.customer_id, C.customer_name
         FROM p21s_customer C
@@ -11,6 +16,12 @@ def client_customer_query() -> sa.text:
     """)
 
 def customer_data_query(customer_id: str) -> sa.text:
+    """
+    Query returns the required ship-to and contact information for a given customer to populate sales order fields.
+
+    :param customer_id: The ID of the customer for which to retrieve ship-to and contact information
+    :return: SQL query to retrieve ship-to and contact information for the specified customer
+    """
     return sa.text(f"""
         SELECT S.ship_to_id, T.id AS contact_id, CONCAT(T.first_name, ' ', T.last_name) AS contact_name
         FROM p21s_customer C
@@ -21,6 +32,11 @@ def customer_data_query(customer_id: str) -> sa.text:
     """)
 
 def client_data_query() -> sa.text:
+    """
+    Query to retrieve client data including supplier, buyer, and inventory information.
+
+    :return: SQL query to retrieve client data for purchase order generation
+    """
     return sa.text(f"""
         WITH default_buyer AS (
             SELECT

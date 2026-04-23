@@ -10,24 +10,23 @@ from app.models.auth import Users
 from app.schemas import UserCreate, LoginRequest, TokenResponse
 from app.helper.hash_helper import hash_password, verify_password
 from app.security.jwt import create_access_token, create_refresh_token, refresh_access_token, should_refresh_access_token
-from app.security.access import login_required, _redirect_to_login
+from app.security.access import login_required, _redirect_to_login, _is_secure_cookie, _access_cookie_max_age
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 logger = logging.getLogger(__name__)
 
-def _is_secure_cookie() -> bool:
-    return os.getenv("ENVIRONMENT", "DEV").upper() == "PROD"
-
-
-def _access_cookie_max_age() -> int:
-    return int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15)) * 60
-
-
 def _refresh_cookie_max_age() -> int:
-    return int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7)) * 24 * 60 * 60
+    """Calculate the max age for the refresh token cookie based on environment variable, defaulting to 2 days."""
+    return int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 2)) * 24 * 60 * 60
 
 def _to_utc_aware(dt: datetime | None) -> datetime | None:
+    """
+    Convert a datetime to UTC and ensure it's timezone-aware. If input is None, return None.
+    
+    :param dt: The datetime to convert
+    :return: A timezone-aware datetime in UTC, or None if input is None
+    """
     if dt is None:
         return None
     if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
@@ -37,6 +36,14 @@ def _to_utc_aware(dt: datetime | None) -> datetime | None:
 
 
 def _set_token_cookie(response: Response, key: str, value: str, max_age: int) -> None:
+    """
+    Set a token cookie with the specified parameters.
+
+    :param response: The FastAPI response object
+    :param key: The name of the cookie
+    :param value: The value of the cookie
+    :param max_age: The maximum age of the cookie in seconds
+    """
     response.set_cookie(
         key=key,
         value=value,
@@ -66,7 +73,7 @@ def register(user: UserCreate, request: Request, response: Response, db: Session
     
     # Create new user
     hashed_password = hash_password(user.password)
-    db_user = Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
+    Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
     logger.info(f"User registered successfully: {user.username} from IP: {get_ip_from_request(request)}")
     return {"message": f"User {user.username} registered successfully"}
 

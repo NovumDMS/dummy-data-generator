@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import logging
 logger = logging.getLogger(__name__)
 
-def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
+def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     """Generate a tab-delimited TSV file under `tsv_files`.
 
     The file name will be `<file_prefix>_<import_set_no>.tsv`, e.g.
@@ -30,13 +30,13 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
         raise FileNotFoundError(f"Project root directory not found at {project_root}")
 
     tsv_dir = project_root / "tsv_files"
-    if file_prefix == "SOH" or file_prefix == "SOL":
+    if file_prefix == "SOHPLAY" or file_prefix == "SOLPLAY":
         tsv_dir = tsv_dir / "sales_orders"
-    elif file_prefix == "POH" or file_prefix == "POL":
+    elif file_prefix == "POHPLAY" or file_prefix == "POLPLAY":
         tsv_dir = tsv_dir / "purchase_orders"
     tsv_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"{file_prefix}_{import_set_no}.tsv"
+    file_name = f"{file_prefix}_{import_set_no}.txt"
     file_path = tsv_dir / file_name
 
     # Write TSV with tab delimiter
@@ -45,17 +45,15 @@ def generate_tsv_file(data: list[dict], db: Session, file_prefix: str) -> None:
         for row in data:
             writer.writerow([row.get(col, "") for col in columns])
 
-    logger.info(f"Generated TSV file at {file_path}")
-
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     files_to_delete = []
 
     with zipfile.ZipFile(output_zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
-        for file in (tsv_dir / "sales_orders").glob("*.tsv"):
+        for file in (tsv_dir / "sales_orders").glob("*.txt"):
             z.write(file, arcname=f"Sales Orders/{file.name}")
             files_to_delete.append(file)
 
-        for file in (tsv_dir / "purchase_orders").glob("*.tsv"):
+        for file in (tsv_dir / "purchase_orders").glob("*.txt"):
             z.write(file, arcname=f"Purchase Orders/{file.name}")
             files_to_delete.append(file)
 

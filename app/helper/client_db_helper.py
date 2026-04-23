@@ -47,7 +47,6 @@ def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Conn
         if connection.execute(sa.text("SELECT 1")).fetchall() is None: # Test the connection
             logger.error(f"Failed to connect to client {client.client_name} (ID: {client_id}) database")
             raise HTTPException(status_code=500, detail="Failed to connect to client's database")
-        logger.info(f"Successfully connected to client {client.client_name} (ID: {client_id}) database")
         return connection
     except Exception as e:
         logger.error(f"Database connection error when connecting to client {client.client_name} (ID: {client_id}): {e}")

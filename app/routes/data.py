@@ -30,16 +30,16 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     sales_order_items = generate_sales_orders(order_data, db, user_id=request.state.user.id, username=request.state.user.username)
 
     logger.info(f"Sales order generated with {len(sales_order_items)} items. Building purchase order payload.")
-    # po_data = PurchaseOrderCreate(
-    #     client_id=order_data.client_id,
-    #     customer_id=order_data.customer_id,
-    #     customer_name=order_data.customer_name,
-    #     company_id=order_data.company_id,
-    #     ship_to_id=order_data.ship_to_id,
-    #     location_id=order_data.location_id,
-    #     item_data={"items": sales_order_items},
-    # )
-    # generate_purchase_orders(po_data, db)
+    po_data = PurchaseOrderCreate(
+        client_id=order_data.client_id,
+        customer_id=order_data.customer_id,
+        customer_name=order_data.customer_name,
+        company_id=order_data.company_id,
+        ship_to_id=order_data.ship_to_id,
+        location_id=order_data.location_id,
+        item_data={"items": sales_order_items},
+    )
+    generate_purchase_orders(po_data, db)
 
     logger.info("Purchase order generation complete. Preparing zip file for download.")
     project_root = Path(__file__).resolve().parents[2]

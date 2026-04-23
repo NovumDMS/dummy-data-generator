@@ -13,7 +13,7 @@ from app.helper.sales_order_helper import get_client_main_location
 from app.models.client import Clients
 from app.security.access import login_required
 from app.schemas import SalesOrderCreate, PurchaseOrderCreate
-from app.helper.file_helper import zip_orders
+from app.helper.file_helper import generate_master_order_files, zip_orders
 from app.scripts.sales_order import generate_sales_orders
 from app.scripts.purchase_order import generate_purchase_orders
 
@@ -29,7 +29,7 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     user_id = request.state.user.id
 
     logger.info(f"Beginning order generation for client_id={order_data.client_id}, customer_id={order_data.customer_id}")
-    client_name = db.query(Clients).filter(Clients.id == order_data.client_id).first().client_name  # Validate client exists
+    client_name = db.query(Clients).filter(Clients.id == order_data.client_id).first().client_name.replace(" ", "")  # Validate client exists and remove spaces
     sales_order_items = generate_sales_orders(order_data, db, user_id=user_id, username=request.state.user.username)
 
     po_data = PurchaseOrderCreate(
@@ -43,6 +43,7 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     logger.info("Purchase order generation complete. Preparing zip file for download.")
     project_root = Path(__file__).resolve().parents[2]
     tsv_dir = project_root / "tsv_files"
+    generate_master_order_files(tsv_dir)
     output_zip = tsv_dir / f"{order_data.client_id}_orders.zip"
     zip_orders(tsv_dir, output_zip)
 

@@ -128,7 +128,7 @@
 
         try {
             generateButton.disabled = true;
-            setStatus(`Generating orders... (estimated time - ${Math.round(salesOrderCount / 10)} seconds)`);
+            setStatus(`Generating orders... (estimated time - ${Math.round(Math.max(salesOrderCount / 20, 5))} seconds)`);
             await API.generateOrders(payload);
             setStatus('Orders generated successfully. Download started.');
         } catch (error) {

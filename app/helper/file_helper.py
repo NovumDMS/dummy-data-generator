@@ -1,10 +1,21 @@
 from pathlib import Path
 import csv
 import zipfile
-from sqlalchemy.orm import Session
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
+    """Append all rows from source files into a single master file."""
+    rows_written = 0
+    with master_file.open("w", encoding="utf-8", newline="") as out_f:
+        for file_path in source_files:
+            with file_path.open("r", encoding="utf-8", newline="") as in_f:
+                for line in in_f:
+                    out_f.write(line)
+                    rows_written += 1
+    return rows_written
 
 def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     """Generate a tab-delimited TSV file under `tsv_files`.
@@ -44,6 +55,37 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
         writer = csv.writer(f, delimiter="\t")
         for row in data:
             writer.writerow([row.get(col, "") for col in columns])
+
+
+def generate_master_order_files(tsv_dir: Path) -> None:
+    """Create _0 master files by concatenating generated order txt files per prefix."""
+    folder_and_prefixes = {
+        tsv_dir / "sales_orders": ["SOHPLAY", "SOLPLAY"],
+        tsv_dir / "purchase_orders": ["POHPLAY", "POLPLAY"],
+    }
+
+    for folder, prefixes in folder_and_prefixes.items():
+        if not folder.exists():
+            logger.info(f"Skipping master file generation for missing folder: {folder}")
+            continue
+
+        for prefix in prefixes:
+            master_file = folder / f"{prefix}_0.txt"
+            source_files = sorted(
+                file_path
+                for file_path in folder.glob(f"{prefix}_*.txt")
+                if file_path.name != master_file.name
+            )
+
+            if not source_files:
+                logger.info(f"No source files found for {prefix}. Skipping master file generation.")
+                continue
+
+            rows_written = _append_files_to_master(source_files, master_file)
+            logger.info(
+                f"Generated master file {master_file.name} with {rows_written} rows "
+                f"from {len(source_files)} files."
+            )
 
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     files_to_delete = []

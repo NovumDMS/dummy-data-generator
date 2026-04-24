@@ -54,34 +54,3 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
         media_type="application/zip",
         filename=f"{client_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_dummy_orders.zip",
     )
-
-@router.get("/validation_items")
-@login_required
-async def get_logged_orders() -> dict:
-    sales_orders = GenerationLogs.pull_so_logs()
-    purchase_orders = GenerationLogs.pull_po_logs()
-    return {
-        "sales_orders": sales_orders,
-        "purchase_orders": purchase_orders
-    }
-
-@router.post("/validate")
-@login_required
-async def validate_orders(client_id: str, order_nums: list[str | int], file_type: str, db: Session = Depends(get_db)) -> bool:
-    """Placeholder for order validation logic"""
-    # The main idea is that this should pull in a list of custom PO/SO numbers
-    # And then should use the P21 API to check against P21 ensuring that they have been properly uploaded.
-    
-
-    file_type = file_type.capitalize
-    if file_type == "PO":
-        
-        return True
-    elif file_type == "SO":
-        
-        return True
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No files of type {file_type}"
-        )

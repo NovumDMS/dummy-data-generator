@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from app.database import get_db
 from app.helper.client_db_helper import get_client_db_connection
 from app.helper.sales_order_helper import get_client_main_location
 from app.models.client import Clients
+from app.models.logging import GenerationLogs
 from app.security.access import login_required
 from app.schemas import SalesOrderCreate, PurchaseOrderCreate
 from app.helper.file_helper import generate_master_order_files, zip_orders
@@ -53,3 +54,34 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
         media_type="application/zip",
         filename=f"{client_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_dummy_orders.zip",
     )
+
+@router.get("/validation_items")
+@login_required
+async def get_logged_orders() -> dict:
+    sales_orders = GenerationLogs.pull_so_logs()
+    purchase_orders = GenerationLogs.pull_po_logs()
+    return {
+        "sales_orders": sales_orders,
+        "purchase_orders": purchase_orders
+    }
+
+@router.post("/validate")
+@login_required
+async def validate_orders(client_id: str, order_nums: list[str | int], file_type: str, db: Session = Depends(get_db)) -> bool:
+    """Placeholder for order validation logic"""
+    # The main idea is that this should pull in a list of custom PO/SO numbers
+    # And then should use the P21 API to check against P21 ensuring that they have been properly uploaded.
+    
+
+    file_type = file_type.capitalize
+    if file_type == "PO":
+        
+        return True
+    elif file_type == "SO":
+        
+        return True
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No files of type {file_type}"
+        )

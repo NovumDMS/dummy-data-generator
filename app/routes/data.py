@@ -14,7 +14,7 @@ from app.models.client import Clients
 from app.models.logging import GenerationLogs
 from app.security.access import login_required
 from app.schemas import SalesOrderCreate, PurchaseOrderCreate
-from app.helper.file_helper import generate_master_order_files, zip_orders
+from app.helper.file_helper import zip_orders
 from app.scripts.sales_order import generate_sales_orders
 from app.scripts.purchase_order import generate_purchase_orders
 
@@ -44,7 +44,6 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     logger.info("Purchase order generation complete. Preparing zip file for download.")
     project_root = Path(__file__).resolve().parents[2]
     tsv_dir = project_root / "tsv_files"
-    generate_master_order_files(tsv_dir)
     output_zip = tsv_dir / f"{order_data.client_id}_orders.zip"
     zip_orders(tsv_dir, output_zip)
 

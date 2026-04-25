@@ -5,7 +5,6 @@ import zipfile
 import logging
 logger = logging.getLogger(__name__)
 
-
 def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
     """
     Append all rows from source files into a single master file.
@@ -25,12 +24,9 @@ def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
 
 def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     """
-    Generate a tab-delimited TSV file under `tsv_files`.
-
-    The file name will be `<file_prefix>_<import_set_no>.tsv`, e.g.
-    `SOH_123.tsv` for header rows or `SOL_123.tsv` for line rows.
-    :param data: List of dictionaries containing the data to write
-    :param file_prefix: Prefix for the TSV file name (e.g. "SOHPLAY", "SOLPLAY", "POHPLAY", "POLPLAY")
+    Adds rows for each individual order to a master file containing all information
+    The file is labeled with the given as {prefix}_0.txt since we are not splitting into multiple files, but this allows for future expansion if needed.
+    The master file is overwritten each time, but that's acceptable since it's only used for immediate zipping and download and not stored long-term.
     """
 
     if not data:
@@ -38,7 +34,6 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
         return
 
     first_row = data[0]
-    import_set_no = first_row.get("import_set_no", "unknown")
 
     # Preserve column order based on the first row
     columns = list(first_row.keys())
@@ -56,49 +51,16 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
         tsv_dir = tsv_dir / "purchase_orders"
     tsv_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"{file_prefix}_{import_set_no}.txt"
+    file_name = f"{file_prefix}_0.txt"
     file_path = tsv_dir / file_name
 
     # Write TSV with tab delimiter
-    with file_path.open("w", newline="", encoding="utf-8") as f:
+    with file_path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
+             
+        # Write data rows
         for row in data:
             writer.writerow([row.get(col, "") for col in columns])
-
-
-def generate_master_order_files(tsv_dir: Path) -> None:
-    """
-    Create _0 master files by concatenating generated order txt files per prefix.
-    This allows for single imports instead of bulk file imports in P21.
-    :param tsv_dir: Path to the directory containing TSV files
-    """
-    folder_and_prefixes = {
-        tsv_dir / "sales_orders": ["SOHPLAY", "SOLPLAY"],
-        tsv_dir / "purchase_orders": ["POHPLAY", "POLPLAY"],
-    }
-
-    for folder, prefixes in folder_and_prefixes.items():
-        if not folder.exists():
-            logger.info(f"Skipping master file generation for missing folder: {folder}")
-            continue
-
-        for prefix in prefixes:
-            master_file = folder / f"{prefix}_0.txt"
-            source_files = sorted(
-                file_path
-                for file_path in folder.glob(f"{prefix}_*.txt")
-                if file_path.name != master_file.name
-            )
-
-            if not source_files:
-                logger.info(f"No source files found for {prefix}. Skipping master file generation.")
-                continue
-
-            rows_written = _append_files_to_master(source_files, master_file)
-            logger.info(
-                f"Generated master file {master_file.name} with {rows_written} rows "
-                f"from {len(source_files)} files."
-            )
 
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     """

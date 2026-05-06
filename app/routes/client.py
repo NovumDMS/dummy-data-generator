@@ -27,7 +27,7 @@ def get_clients(request: Request, response: Response, db: Session = Depends(get_
 @login_required
 def register_client(client: ClientCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Register a new client"""
-    existing_client = db.query(Clients).filter(Clients.client_id == client.client_id and Clients.client_name == client.name).first()
+    existing_client = db.query(Clients).filter(Clients.client_id == client.client_id, Clients.client_name == client.name).first()
     if existing_client:
         logger.warning(f"Registration attempt with existing client ID: {client.client_id} from IP: {request.client.host}")
         raise HTTPException(

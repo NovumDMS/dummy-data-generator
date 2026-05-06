@@ -58,6 +58,7 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     with file_path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
              
+        # TODO: Try to test something to get this to skip a line and see what occurs. This is to check appending functionality
         # Write data rows
         for row in data:
             writer.writerow([row.get(col, "") for col in columns])

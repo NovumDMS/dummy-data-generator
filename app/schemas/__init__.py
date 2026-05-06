@@ -20,7 +20,7 @@ class UserCreate(UserBase):
 
 class ClientCreate(BaseModel):
     """Client creation schema"""
-    client_id: str
+    client_id: str # TODO: Add validation so it connections properly with db
     name: str
     email: Optional[EmailStr] = None
     db_url: str
@@ -40,7 +40,7 @@ class LoginRequest(BaseModel):
 class OrderData(BaseModel):
     """Base order data schema"""
     client_id: str
-    customer_id: str
+    customer_id: str # TODO: This can still be used as a SQL injection point 
     customer_name: str
     company_id: str
     location_id: Optional[str] = None

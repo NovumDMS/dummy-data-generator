@@ -116,15 +116,6 @@ def register_page(request: Request, response: Response):
         return app.templates.TemplateResponse("register.html", {"request": request})
     else:
         return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
-    
-@app.get("/clients")
-@login_required
-def clients_page(request: Request, response: Response):
-    """Render clients page"""
-    if hasattr(app, "templates"):
-        return app.templates.TemplateResponse("clients.html", {"request": request})
-    else:
-        return JSONResponse(content={"error": "Templates not configured"}, status_code=500)
 
 @app.get("/health")
 @login_required

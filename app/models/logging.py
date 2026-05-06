@@ -2,9 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import JSON, Boolean, Column, UUID, DateTime, ForeignKey, Integer, String
 
-from app.database import get_db, Base, gen_uuid
-
-db = get_db()
+from app.database import Base, gen_uuid
 
 class GenerationLogs(Base):
     __tablename__ = "generation_logs"
@@ -44,7 +42,7 @@ class GenerationLogs(Base):
     @staticmethod
     def pull_so_logs(db):
         """Pull generation logs for a specific client and user"""
-        logs = db.query(GenerationLogs).filter(GenerationLogs.generated_file_type == "SO" and GenerationLogs.success_flag == True).order_by(GenerationLogs.generation_date.desc()).all()
+        logs = db.query(GenerationLogs).filter(GenerationLogs.generated_file_type == "SO", GenerationLogs.success_flag == True).order_by(GenerationLogs.generation_date.desc()).all()
         formatted_logs = []
         for log in logs:
             formatted_log = {

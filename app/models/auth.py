@@ -2,9 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
-from app.database import get_db, Base, gen_uuid
-
-db = get_db()
+from app.database import Base, gen_uuid
 
 class Users(Base):
     __tablename__ = "users"

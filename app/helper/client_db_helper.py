@@ -8,16 +8,15 @@ from app.helper.hash_helper import decrypt_db_url
 
 logger = logging.getLogger(__name__)
 
-def get_client_db_url(client_id: str, db: Session) -> str:
+def get_client_db_url(client: Clients, db: Session) -> str:
     """
     Retrieve client database URL. This pulls from the NovumDMS table not any client table.
     Requires the URL to be decrypted.
 
-    :param client_id: The ID of the client to retrieve the database URL for
+    :param client: The client object to retrieve the database URL for
     :param db: The SQLAlchemy database session. Must come from a routed method.
     :return: The decrypted database URL for the specified client
     """
-    client = db.query(Clients).filter(Clients.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     db_url = decrypt_db_url(client.client_db_url_hash)
@@ -52,7 +51,7 @@ def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Conn
         logger.error(f"Client with ID {client_id} not found")
         raise HTTPException(status_code=404, detail="Client not found")
     
-    client_db_url = get_client_db_url(client_id, db)
+    client_db_url = get_client_db_url(client, db)
     
     # Retrieve the hashed database URL and verify it
     if not confirm_dev_url(client_db_url):
@@ -60,6 +59,7 @@ def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Conn
         raise HTTPException(status_code=400, detail="Invalid database URL. Only development/test URLs are allowed.")
 
     try:
+        # TODO: Look into connection duplication. The engine might clean itself up, but we might be making multiple connections.
         normalized_url = client_db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
         engine = sa.create_engine(normalized_url)  # Test if SQLAlchemy can create an engine with the URL
         connection = engine.connect()  # Test the connection\

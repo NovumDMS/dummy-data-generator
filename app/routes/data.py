@@ -30,7 +30,16 @@ async def generate(order_data: SalesOrderCreate, request: Request, response: Res
     user_id = request.state.user.id
 
     logger.info(f"Beginning order generation for client_id={order_data.client_id}, customer_id={order_data.customer_id}")
-    client_name = db.query(Clients).filter(Clients.id == order_data.client_id).first().client_name.replace(" ", "")  # Validate client exists and remove spaces
+
+    client = db.query(Clients).filter(Clients.id == order_data.client_id).first()  # Validate client exists and remove spaces
+    if not client:
+        logger.warning(f"Client with ID {order_data.client_id} not found. Aborting order generation.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Client with ID {order_data.client_id} not found"
+        )
+    client_name = client.client_name.replace(" ", "_")  # Sanitize client name for file naming
+
     sales_order_items = generate_sales_orders(order_data, db, user_id=user_id, username=request.state.user.username)
 
     po_data = PurchaseOrderCreate(

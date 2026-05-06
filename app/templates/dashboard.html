@@ -38,7 +38,7 @@
     </div>
 
     <div class="generation-btn-container">
-        <button id="generateButton" class="btn btn-primary">Generate</button>
+        <button id="generateButton" class="btn btn-primary">Generate</button> 
     </div>
 
     <p id="generationStatus"></p>
@@ -48,10 +48,10 @@
     const clientSelect = document.getElementById('clientSelect');
     const customerSelect = document.getElementById('clientCustomers');
     const lowerItemCountInput = document.getElementById('lowerItemCount');
-    const upperItemCountInput = document.getElementById('upperItemCount');
-    const salesOrderCountInput = document.getElementById('salesOrderCount');
+    const upperItemCountInput = document.getElementById('upperItemCount'); // TODO: Create Max amount
+    const salesOrderCountInput = document.getElementById('salesOrderCount'); // TODO: Create max amount (include backend)
     const randomSoCountCheckbox = document.getElementById('randomSoCount');
-    const generateButton = document.getElementById('generateButton');
+    const generateButton = document.getElementById('generateButton'); 
     const generationStatus = document.getElementById('generationStatus');
 
     let customerLookup = new Map();

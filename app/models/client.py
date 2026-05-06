@@ -4,13 +4,12 @@ from dotenv import load_dotenv
 
 from sqlalchemy import Boolean, Column, UUID, DateTime, Integer, String
 
-from app.database import get_db, Base, gen_uuid
+from app.database import Base, gen_uuid
 from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
-
-db = get_db()
 
 def check_client_db_whitelist(client_db_url: str) -> bool:
     """Check if the client's database URL is in the whitelist"""
+    # TODO: We need to create the whitelist
     whitelist = [url.strip() for url in os.getenv("CLIENT_DB_LIST", "").split(",") if url.strip()]
     return client_db_url in whitelist
 
@@ -25,7 +24,7 @@ class Clients(Base):
     last_generated_ip = Column(String(45), nullable=True)
     last_generated_by = Column(String(255), nullable=True)
     last_generated_at = Column(DateTime, nullable=True)
-    deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted
+    deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted TODO: Probably unnecessary
     email = Column(String(255), nullable=True)
 
     @staticmethod

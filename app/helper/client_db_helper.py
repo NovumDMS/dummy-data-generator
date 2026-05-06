@@ -52,7 +52,7 @@ def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Conn
         raise HTTPException(status_code=404, detail="Client not found")
     
     client_db_url = get_client_db_url(client, db)
-    
+
     # Retrieve the hashed database URL and verify it
     if not confirm_dev_url(client_db_url):
         logger.warning(f"Attempt to connect with invalid database URL for client {client.client_name} (ID: {client_id})")

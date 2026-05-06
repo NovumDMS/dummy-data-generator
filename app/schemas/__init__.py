@@ -1,5 +1,7 @@
 """Pydantic Schemas for request/response validation"""
-from pydantic import BaseModel, EmailStr
+import uuid
+
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
@@ -20,8 +22,8 @@ class UserCreate(UserBase):
 
 class ClientCreate(BaseModel):
     """Client creation schema"""
-    client_id: str # TODO: Add validation so it connections properly with db
-    name: str
+    client_id: str = Field(..., max_length=3, description="Unique 3-character client ID")
+    name: str 
     email: Optional[EmailStr] = None
     db_url: str
 
@@ -39,10 +41,10 @@ class LoginRequest(BaseModel):
 
 class OrderData(BaseModel):
     """Base order data schema"""
-    client_id: str
-    customer_id: str # TODO: This can still be used as a SQL injection point 
+    client_id: uuid.UUID
+    customer_id: str
     customer_name: str
-    company_id: str
+    company_id: str = Field(max_length=3, description="Unique 3-character client ID")
     location_id: Optional[str] = None
 
 
@@ -56,7 +58,7 @@ class SalesOrderCreate(OrderData):
 
 class PurchaseOrderCreate(BaseModel):
     """Purchase order header creation schema"""
-    client_id: str
+    client_id: uuid.UUID
     company_id: str
     location_id: int
     items: list[dict]

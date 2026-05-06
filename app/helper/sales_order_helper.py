@@ -33,7 +33,7 @@ def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(ge
     :return: Dictionary containing customer data or None if not found
     """
     with get_client_db_connection(client_id, db) as conn:
-        result = conn.execute(queries.customer_data_query(customer_id)).mappings().first()
+        result = conn.execute(queries.customer_data_query(), {"customer_id": customer_id}).mappings().first()
     if not result:
         logger.warning(f"No customer data found for customer_id={customer_id} in client_id={client_id}. Returning None.")
         return None

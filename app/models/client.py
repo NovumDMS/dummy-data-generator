@@ -9,8 +9,7 @@ from app.helper.hash_helper import encrypt_db_url, decrypt_db_url
 
 def check_client_db_whitelist(client_db_url: str) -> bool:
     """Check if the client's database URL is in the whitelist"""
-    # TODO: We need to create the whitelist
-    whitelist = [url.strip() for url in os.getenv("CLIENT_DB_LIST", "").split(",") if url.strip()]
+    whitelist = [url.strip() for url in os.getenv("CLIENT_DB_LIST", []) if url.strip()]
     return client_db_url in whitelist
 
 class Clients(Base):
@@ -30,8 +29,7 @@ class Clients(Base):
     @staticmethod
     def add_new_client(db, client_id: str, client_name: str, client_db_url: str, email: str = None, last_generated_by: str = None, last_generated_ip: str = None):
         """Add a new client to the database"""
-        allowed_keywords = ("play", "dev", "development", "etl")
-        if any(keyword in client_db_url.lower() for keyword in allowed_keywords):  # Allow only development/test database URLs
+        if check_client_db_whitelist(client_db_url):  # Allow only whitelisted database urls
             client_db_url_hash = encrypt_db_url(client_db_url)
 
             new_client = Clients(

@@ -20,6 +20,10 @@ def get_client_main_location(client_id: str, db: Session = Depends(get_db)) -> i
     """
     with get_client_db_connection(client_id, db) as conn:
         location_id = conn.execute(sa.text("SELECT location_id FROM p21s_location LIMIT 1")).scalar()
+
+    if not location_id:
+        logger.warning(f"No location found for client_id={client_id}. Defaulting to location_id=1.")
+        raise ValueError(f"No location found for client_id={client_id}. Cannot proceed without a valid location.")
     return int(location_id)
 
 def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(get_db)) -> dict | None:
@@ -36,7 +40,7 @@ def get_customer_data(customer_id: str, client_id: str, db: Session = Depends(ge
         result = conn.execute(queries.customer_data_query(), {"customer_id": customer_id}).mappings().first()
     if not result:
         logger.warning(f"No customer data found for customer_id={customer_id} in client_id={client_id}. Returning None.")
-        return None
+        raise ValueError(f"No customer data found for customer_id={customer_id} in client_id={client_id}. Cannot proceed without valid customer data.")
     return result
 
 def get_takers(client_id: str, db: Session = Depends(get_db)) -> list[str]:

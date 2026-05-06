@@ -32,6 +32,7 @@ def confirm_dev_url(client_db_url: str) -> bool:
     allowed_keywords = ("play", "dev", "development", "etl")
     return any(keyword in client_db_url.lower() for keyword in allowed_keywords)
 
+_engine_cache = {}
 
 def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Connection:
     """
@@ -59,14 +60,23 @@ def get_client_db_connection(client_id: str, db: Session) -> sa.engine.base.Conn
         raise HTTPException(status_code=400, detail="Invalid database URL. Only development/test URLs are allowed.")
 
     try:
-        # TODO: Look into connection duplication. The engine might clean itself up, but we might be making multiple connections.
-        normalized_url = client_db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
-        engine = sa.create_engine(normalized_url)  # Test if SQLAlchemy can create an engine with the URL
-        connection = engine.connect()  # Test the connection\
-        
+        # Check cache for the engine first
+        if client_id in _engine_cache:
+            engine = _engine_cache[client_id]
+            connection = engine.connect()
+            
+        else: # Create new engine and connection if not in cache, then store
+            normalized_url = client_db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
+            engine = sa.create_engine(normalized_url)  # Test if SQLAlchemy can create an engine with the URL
+            connection = engine.connect()  # Test the connection\
+            
+        # Check the connection is good
         if connection.execute(sa.text("SELECT 1")).fetchall() is None: # Test the connection
             logger.error(f"Failed to connect to client {client.client_name} (ID: {client_id}) database")
             raise HTTPException(status_code=500, detail="Failed to connect to client's database")
+        
+        # Store or replace the current cache with the engine (might be the exact same engine if it was already cached)
+        _engine_cache[client_id] = engine
         return connection
     except Exception as e:
         logger.error(f"Database connection error when connecting to client {client.client_name} (ID: {client_id}): {e}")

@@ -2,8 +2,18 @@ from pathlib import Path
 import csv
 import zipfile
 
+from app.helper.sales_order_helper import HDR_DEFAULT_STRUCTURE as SO_HDR, LINE_DEFAULT_STRUCTURE as SO_LINE
+from app.helper.purchase_order_helper import PURCHASE_ORDER_HDR as PO_HDR, PURCHASE_ORDER_LINE as PO_LINE
+
 import logging
 logger = logging.getLogger(__name__)
+
+defaults_keys = {
+    "SOHPLAY": list(SO_HDR.keys()),
+    "SOLPLAY": list(SO_LINE.keys()),
+    "POHPLAY": list(PO_HDR.keys()),
+    "POLPLAY": list(PO_LINE.keys()),
+}
 
 def _append_files_to_master(source_files: list[Path], master_file: Path) -> int:
     """
@@ -33,10 +43,8 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
         logger.info(f"No data provided for {file_prefix} TSV generation. Skipping file creation.")
         return
 
-    first_row = data[0]
-
-    # Preserve column order based on the first row
-    columns = list(first_row.keys())
+    # Preserve column order based on the default structure
+    columns = defaults_keys.get(file_prefix, []) # Use list of defaults in case first line somehow loses columns.
 
     # Resolve project root (two levels up: app/routes -> app -> project root)
     project_root = Path(__file__).resolve().parents[2]
@@ -57,11 +65,13 @@ def generate_tsv_file(data: list[dict], file_prefix: str) -> None:
     # Write TSV with tab delimiter
     with file_path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
-             
-        # TODO: Try to test something to get this to skip a line and see what occurs. This is to check appending functionality
+            
         # Write data rows
-        for row in data:
-            writer.writerow([row.get(col, "") for col in columns])
+        try:
+            for row in data:
+                writer.writerow([row.get(col, "") for col in columns])
+        except Exception as e:
+            logger.error(f"Error writing to TSV file {file_path}. Errored data contains: {row}. Message: {e}", exc_info=True)
 
 def zip_orders(tsv_dir: Path, output_zip: Path) -> Path:
     """

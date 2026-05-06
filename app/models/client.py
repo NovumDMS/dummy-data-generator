@@ -23,7 +23,6 @@ class Clients(Base):
     last_generated_ip = Column(String(45), nullable=True)
     last_generated_by = Column(String(255), nullable=True)
     last_generated_at = Column(DateTime, nullable=True)
-    deleted_flag = Column(Boolean, default=False)  # 0 for active, 1 for deleted TODO: Probably unnecessary
     email = Column(String(255), nullable=True)
 
     @staticmethod

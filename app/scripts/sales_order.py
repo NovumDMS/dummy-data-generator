@@ -27,12 +27,14 @@ def generate_sales_orders(order_data: SalesOrderCreate, db: Session, user_id: st
     customer_name = order_data.customer_name
     company_id = order_data.company_id
     lower_item_count = order_data.lower_item_count
-    upper_item_count = order_data.upper_item_count # TODO: put max value
+    upper_item_count = order_data.upper_item_count if order_data.upper_item_count >= lower_item_count else lower_item_count
+    if upper_item_count > 50:
+        upper_item_count = 50 # Enforce upper limit, should never reach due to frontend validation but this is a safeguard
 
     sales_order_count = (
         random.randint(1, 10)
         if order_data.sales_order_count == 0
-        else order_data.sales_order_count # TODO: put max value
+        else order_data.sales_order_count if order_data.sales_order_count <= 100 else 100 # Enforce upper limit, should never reach due to frontend validation but this is a safeguard
     )
 
     all_items: list[dict] = []

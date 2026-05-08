@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from dotenv import load_dotenv
 
-load_dotenv("working.env")
+load_dotenv()
 
 # Create database engine
 engine = create_engine(

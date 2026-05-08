@@ -32,7 +32,7 @@
             <label for="salesOrderCount">Number of sales orders:</label>
             <input type="number" id="salesOrderCount" class="client-data-select" min="0" step="1" value="5" />
             <label style="margin-top:4px;">
-                <input type="checkbox" id="randomSoCount" /> Random (1–10)
+                <input type="checkbox" id="randomSoCount" /> Random (1-10)
             </label>
         </div>
     </div>
@@ -48,8 +48,8 @@
     const clientSelect = document.getElementById('clientSelect');
     const customerSelect = document.getElementById('clientCustomers');
     const lowerItemCountInput = document.getElementById('lowerItemCount');
-    const upperItemCountInput = document.getElementById('upperItemCount'); // TODO: Create Max amount
-    const salesOrderCountInput = document.getElementById('salesOrderCount'); // TODO: Create max amount (include backend)
+    const upperItemCountInput = document.getElementById('upperItemCount');
+    const salesOrderCountInput = document.getElementById('salesOrderCount');
     const randomSoCountCheckbox = document.getElementById('randomSoCount');
     const generateButton = document.getElementById('generateButton'); 
     const generationStatus = document.getElementById('generationStatus');
@@ -111,8 +111,18 @@
             return;
         }
 
+        if (Number.isInteger(upperItemCount) && upperItemCount > 50) {
+            setStatus('Max items per order cannot exceed 50.', true); // Set upper limit for items per order
+            return;
+        }
+
         if (!randomSoCountCheckbox.checked && (!Number.isInteger(salesOrderCount) || salesOrderCount < 1)) {
-            setStatus('Number of sales orders must be at least 1.', true);
+            setStatus('Number of sales orders must be at least 1.', true); 
+            return;
+        }
+
+        if (Number.isInteger(salesOrderCount) && salesOrderCount > 100) {
+            setStatus('Number of sales orders cannot exceed 100.', true); // Set upper limit for sales orders
             return;
         }
 

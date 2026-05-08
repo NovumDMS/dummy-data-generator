@@ -7,7 +7,7 @@ from uuid import UUID
 from dotenv import load_dotenv
 import jwt
 
-load_dotenv("working.env")
+load_dotenv()
 
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"

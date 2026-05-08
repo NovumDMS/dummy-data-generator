@@ -15,11 +15,10 @@ def client_customer_query() -> sa.text:
         ORDER BY C.customer_name;
     """)
 
-def customer_data_query(customer_id: str) -> sa.text:
+def customer_data_query() -> sa.text:
     """
     Query returns the required ship-to and contact information for a given customer to populate sales order fields.
 
-    :param customer_id: The ID of the customer for which to retrieve ship-to and contact information
     :return: SQL query to retrieve ship-to and contact information for the specified customer
     """
     return sa.text(f"""
@@ -27,7 +26,7 @@ def customer_data_query(customer_id: str) -> sa.text:
         FROM p21s_customer C
             JOIN p21s_ship_to S ON S.customer_id = C.customer_id
             JOIN p21s_contacts T ON T.address_id = C.customer_id
-        WHERE C.customer_id = {customer_id}
+        WHERE C.customer_id = :customer_id
         LIMIT 1;
     """)
 

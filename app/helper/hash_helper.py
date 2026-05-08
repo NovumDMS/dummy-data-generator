@@ -3,7 +3,7 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 
-load_dotenv('working.env')
+load_dotenv()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

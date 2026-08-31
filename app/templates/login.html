@@ -1,24 +1,28 @@
-{% extends "base.html" %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+<script src="{{ url_for('static', path='/js/api.js') }}" defer></script>
 
-{% block title %}Login - Dummy Data Generator{% endblock %}
+{% if msg %}
+<div id="loginToast" class="login-toast login-toast-{{ level }}">{{ msg }}</div>
+{% endif %}
 
-{% block content %}
-<div class="auth-container">
-    <div class="auth-form">
-        <h2>Login</h2>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p>Don't have an account? <a href="/register">Register here</a></p>
-        <div id="loginMessage"></div>
+<div class="auth-page">
+    <div class="login-container">
+        <h1>Dummy Data Generator</h1>
+        <div class="login-form">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <div id="loginMessage"></div>
+        </div>
     </div>
 </div>
 
@@ -29,13 +33,17 @@
         const password = document.getElementById('password').value;
         
         try {
-            const response = await API.login(username, password);
-            localStorage.setItem('access_token', response.access_token);
-            document.getElementById('loginMessage').textContent = 'Login successful! Redirecting...';
-            setTimeout(() => window.location.href = '/', 2000);
+            await API.login(username, password);
         } catch (error) {
-            document.getElementById('loginMessage').textContent = 'Login failed: ' + error.message;
+            document.getElementById('loginMessage').textContent = error.message;
+            document.getElementById('password').value = '';
         }
     });
+
+    const loginToast = document.getElementById('loginToast');
+    if (loginToast) {
+        setTimeout(() => {
+            loginToast.classList.add('hide');
+        }, 3500);
+    }
 </script>
-{% endblock %}

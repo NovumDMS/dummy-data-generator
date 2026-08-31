@@ -1,15 +1,19 @@
 """Database Configuration and Session Management"""
+import os
+from uuid import uuid4
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from app.config import get_settings
 
-settings = get_settings()
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Create database engine
 engine = create_engine(
-    settings.database_url,
-    echo=settings.debug,
+    os.getenv("DATABASE_URL"), # os.environ.get("DATABASE_URL"),
+    echo=False, #os.getenv("DEBUG", "False").lower() in ("true", "1", "t"),
     pool_pre_ping=True,  # Verify connections before using them
 )
 
@@ -27,3 +31,8 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+def gen_uuid():
+    """Generate a new UUID"""
+    return str(uuid4())
+

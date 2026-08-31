@@ -5,7 +5,7 @@
 {% block content %}
 <div class="auth-container">
     <div class="auth-form">
-        <h2>Register</h2>
+        <h2>Register User</h2>
         <form id="registerForm">
             <div class="form-group">
                 <label for="username">Username:</label>
@@ -21,8 +21,30 @@
             </div>
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
-        <p>Already have an account? <a href="/login">Login here</a></p>
         <div id="registerMessage"></div>
+    </div>
+    <div class="auth-form">
+        <h2>Register Client</h2>
+        <form id="registerClientForm">
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" id="client_id" name="client_id" required>
+            </div>
+            <div class="form-group">
+                <label for="client_name">Client Name:</label>
+                <input type="text" id="client_name" name="client_name" required>
+            </div>
+            <div class="form-group">
+                <label for="client_email">Client Email:</label>
+                <input type="email" id="client_email" name="client_email">
+            </div>
+            <div class="form-group">
+                <label for="client_db_url">Client DB URL:</label>
+                <input type="text" id="client_db_url" name="client_db_url" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+        <div id="registerClientMessage"></div>
     </div>
 </div>
 
@@ -34,11 +56,25 @@
         const password = document.getElementById('password').value;
         
         try {
-            await API.register(username, email, password);
-            document.getElementById('registerMessage').textContent = 'Registration successful! Redirecting to login...';
-            setTimeout(() => window.location.href = '/login', 2000);
+            let data = await API.registerUser(username, email, password);
+            document.getElementById('registerMessage').textContent = data.detail;
         } catch (error) {
             document.getElementById('registerMessage').textContent = 'Registration failed: ' + error.message;
+        }
+    }); 
+
+    document.getElementById('registerClientForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const client_id = document.getElementById('client_id').value;
+        const client_name = document.getElementById('client_name').value;
+        const client_email = document.getElementById('client_email').value;
+        const client_db_url = document.getElementById('client_db_url').value;
+        
+        try {
+            let data = await API.registerClient(client_id, client_name, client_email, client_db_url);
+            document.getElementById('registerClientMessage').textContent = data.message;
+        } catch (error) {
+            document.getElementById('registerClientMessage').textContent = 'Client registration failed: ' + error.detail;
         }
     });
 </script>

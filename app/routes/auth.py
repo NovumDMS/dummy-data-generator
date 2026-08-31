@@ -1,79 +1,164 @@
 """Authentication Routes"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
+import os
+import logging
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
-from app.schemas import UserCreate, UserResponse, LoginRequest, TokenResponse
-from app.security import hash_password, verify_password
-from app.security.jwt import create_access_token
+from app.helper.ip_helper import get_ip_from_request
+from app.models.auth import Users
+from app.schemas import UserCreate, LoginRequest, TokenResponse
+from app.helper.hash_helper import hash_password, verify_password
+from app.security.jwt import create_access_token, create_refresh_token, refresh_access_token, should_refresh_access_token
+from app.security.access import login_required, _redirect_to_login, _is_secure_cookie, _access_cookie_max_age
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+logger = logging.getLogger(__name__)
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def _refresh_cookie_max_age() -> int:
+    """Calculate the max age for the refresh token cookie based on environment variable, defaulting to 2 days."""
+    return int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 2)) * 24 * 60 * 60
+
+def _to_utc_aware(dt: datetime | None) -> datetime | None:
+    """
+    Convert a datetime to UTC and ensure it's timezone-aware. If input is None, return None.
+    
+    :param dt: The datetime to convert
+    :return: A timezone-aware datetime in UTC, or None if input is None
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        # Treat stored naive values as UTC
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _set_token_cookie(response: Response, key: str, value: str, max_age: int) -> None:
+    """
+    Set a token cookie with the specified parameters.
+
+    :param response: The FastAPI response object
+    :param key: The name of the cookie
+    :param value: The value of the cookie
+    :param max_age: The maximum age of the cookie in seconds
+    """
+    response.set_cookie(
+        key=key,
+        value=value,
+        httponly=True,
+        secure=_is_secure_cookie(),
+        samesite="lax",
+        max_age=max_age,
+        path="/",
+    )
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+@login_required
+def register(user: UserCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     """Register a new user"""
     # Check if user already exists
-    existing_user = db.query(User).filter(
-        (User.username == user.username) | (User.email == user.email)
+    existing_user = db.query(Users).filter(
+        (Users.username == user.username)
     ).first()
     
     if existing_user:
+        logger.warning(f"Registration attempt with existing username: {user.username} from IP: {get_ip_from_request(request)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or email already registered"
+            detail="Username already registered"  
         )
     
     # Create new user
     hashed_password = hash_password(user.password)
-    db_user = User(
-        username=user.username,
-        email=user.email,
-        hashed_password=hashed_password
-    )
-    
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    
-    return db_user
+    Users.add_new_user(db=db, username=user.username, password_hash=hashed_password, is_admin=user.is_admin, email=user.email)
+    logger.info(f"User registered successfully: {user.username} from IP: {get_ip_from_request(request)}")
+    return {"message": f"User {user.username} registered successfully"}
 
-
-@router.post("/login", response_model=TokenResponse)
-def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+@router.post("/login")
+def login(response: Response, credentials: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Login and get access token"""
     # Find user
-    user = db.query(User).filter(User.username == credentials.username).first()
+    user = db.query(Users).filter(Users.username == credentials.username).first()
     
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid username or password",
         )
     
     if not user.is_active:
+        logger.warning(f"Login attempt for inactive user: {user.username} from IP: {get_ip_from_request(request)}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
     
-    # Create access token
-    access_token = create_access_token({"sub": user.username, "user_id": user.id})
+    lockout_utc = _to_utc_aware(user.lockout_time)
     
-    return {"access_token": access_token}
-
-
-@router.get("/me", response_model=UserResponse)
-def get_current_user(token: str = None, db: Session = Depends(get_db)):
-    """Get current user info (requires authentication)"""
-    # This is a placeholder - implement full token verification in production
-    if not token:
+    if lockout_utc and lockout_utc > datetime.now(timezone.utc):
+        logger.warning(f"Login attempt for locked out user: {user.username} from IP: {get_ip_from_request(request)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account locked until {lockout_utc.isoformat()}"
         )
     
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid token"
-    )
+    if not verify_password(credentials.password, user.password_hash):
+        user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=False)
+        logger.warning(f"Invalid password attempt for user: {user.username} from IP: {get_ip_from_request(request)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
+        )
+
+    
+    # Create access token
+    token_payload = {"sub": user.username, "user_id": str(user.id), "is_admin": user.is_admin}
+    access_token = create_access_token(token_payload)
+    refresh_token = create_refresh_token(token_payload)
+    user.track_user_login(db, user_id=user.id, login_ip=get_ip_from_request(request), successful=True)
+    logger.info(f"User logged in successfully: {user.username} from IP: {get_ip_from_request(request)}")
+
+    _set_token_cookie(response, "access_token", access_token, _access_cookie_max_age())
+    _set_token_cookie(response, "refresh_token", refresh_token, _refresh_cookie_max_age())
+    
+    return {"message": "Login successful"}
+
+
+@router.post("/refresh")
+def refresh_login_token(request: Request, response: Response):
+    """Refresh the access token when the current one is nearly expired."""
+    refresh_token_cookie = request.cookies.get("refresh_token")
+    if not refresh_token_cookie:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token missing",
+        )
+
+    current_access_token = request.cookies.get("access_token")
+    if current_access_token and not should_refresh_access_token(current_access_token):
+        return {"message": "Access token does not need refresh yet", "refreshed": False}
+
+    refreshed_access_token = refresh_access_token(refresh_token_cookie, current_access_token)
+    if not refreshed_access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unable to refresh access token",
+        )
+
+    logger.info(f"Access token refreshed successfully for user from IP: {get_ip_from_request(request)}")
+    _set_token_cookie(response, "access_token", refreshed_access_token, _access_cookie_max_age())
+    return {"message": "Access token refreshed", "refreshed": True}
+
+
+@router.api_route("/logout", methods=["GET", "POST"])
+def logout(request: Request):
+    """Logout user by clearing the access token cookie"""
+    redirect_response = _redirect_to_login(request, "Logged out successfully", "success")
+    redirect_response.delete_cookie(key="access_token", path="/")
+    redirect_response.delete_cookie(key="refresh_token", path="/")
+    logger.info("User logged out successfully")
+
+    return redirect_response
